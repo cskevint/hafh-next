@@ -12,7 +12,6 @@ import {
   outline,
   testimonials,
 } from "@/content/course";
-import { CourseNav } from "@/components/layout/CourseNav";
 import { CourseOutline } from "@/components/course/CourseOutline";
 import { CourseVideo } from "@/components/course/CourseVideo";
 import { EnrollButton } from "@/components/course/EnrollButton";

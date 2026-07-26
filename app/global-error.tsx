@@ -15,6 +15,12 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // No error-reporting service wired up yet; at minimum make the digest
+  // reachable from the browser console.
+  if (typeof window !== "undefined") {
+    console.error("[global-error]", error.digest ?? error.message);
+  }
+
   return (
     <html lang="en">
       <body
@@ -37,6 +43,10 @@ export default function GlobalError({
           </h1>
           <p style={{ marginBottom: "1.5rem" }}>
             Please try again, or visit{" "}
+            {/* Deliberately a plain <a>, not next/link. This boundary catches
+              * ROOT LAYOUT failures, so client-side routing is exactly what
+              * cannot be trusted here — a full document load is the point. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/" style={{ color: "#0279ad" }}>
               our homepage
             </a>
