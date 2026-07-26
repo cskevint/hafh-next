@@ -11,6 +11,14 @@ import { isAuthorized, unauthorizedResponse } from "@/lib/admin-auth";
  * and is billed per invocation.
  */
 export function proxy(request: NextRequest) {
+  /* Let dead PHP paths under /admin fall through to a normal 404 instead of
+   * being challenged. /admin/updatesite.php was the old git-pull deploy hook;
+   * answering 401 there tells a crawler the URL still exists, which is worse
+   * than 404 for something that should simply be gone. */
+  if (request.nextUrl.pathname.endsWith(".php")) {
+    return NextResponse.next();
+  }
+
   if (!isAuthorized(request.headers.get("authorization"))) {
     return unauthorizedResponse();
   }
