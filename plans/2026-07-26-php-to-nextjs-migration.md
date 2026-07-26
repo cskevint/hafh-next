@@ -26,6 +26,18 @@ Once the repo exists, this plan is copied to `hafh-next/plans/2026-07-26-php-to-
 
 ---
 
+## Framework constraints (Next.js 16.2.12)
+
+Verified against the bundled docs in `node_modules/next/dist/docs/`, which the scaffold's `AGENTS.md` requires reading before writing code. Several of these invalidate assumptions in the original plan text.
+
+1. **`middleware.ts` is renamed `proxy.ts`.** Root-level `proxy.ts`, exporting `proxy` (named or default). Same `config.matcher` semantics. Config flags renamed too (`skipMiddlewareUrlNormalize` → `skipProxyUrlNormalize`). The admin Basic-auth gate goes here.
+2. **Async request APIs — synchronous access is fully removed** (it was merely deprecated in 15). `cookies()`, `headers()`, `draftMode()`, and `params`/`searchParams` in pages, layouts, and route handlers are all Promises. The course page's `?offer=` read and the quiz's `?question=` read must `await`. Run `npx next typegen` to get the `PageProps<'/route'>` / `LayoutProps` / `RouteContext` helpers and type these properly rather than hand-writing prop types.
+3. **`data-scroll-behavior="smooth"` is now opt-in on `<html>`.** Next no longer overrides global `scroll-behavior: smooth` during route transitions. Since the course page uses smooth in-page anchor scrolling and `scrollIntoView({behavior:'smooth'})`, set this attribute so *route* navigations still jump instantly while in-page anchors stay smooth.
+4. **`next lint` is removed and `next build` no longer lints.** Lint is a separate `eslint` script, so CI must run it explicitly — a build passing is no longer evidence lint passed.
+5. **Turbopack is the default bundler.** No custom webpack config to port (we have none).
+6. **`next/image` defaults changed**: `16` removed from `imageSizes`, new `minimumCacheTTL` and `qualities` defaults, and local images with query strings behave differently. Relevant when tuning the course page's LCP work.
+7. **PPR's `experimental_ppr` segment flag is removed**; `serverRuntimeConfig`/`publicRuntimeConfig` are gone (env vars only).
+
 ## Bugs on `530fa4f` that must NOT be carried forward
 
 Each of these would have broken a page or a lead flow. They are the reason we rewrite rather than resume.
@@ -106,7 +118,7 @@ hafh-next/
 ├── public/                         # curated — no PDF, no unused PNGs, no .DS_Store
 ├── plans/                          # this plan lives here
 ├── scripts/check-redirects.mjs
-├── middleware.ts  next.config.ts  components.json  .env.example  CLAUDE.md  README.md
+├── proxy.ts  next.config.ts  components.json  .env.example  CLAUDE.md  README.md
 ```
 
 ### Why `content/*.ts` for page data
@@ -245,7 +257,7 @@ In Vercel: apex → `www` (308); confirm `trailingSlash: false` (the default).
 
 ### Phase 4 — Lead pipeline + admin
 
-`lib/leads/store.ts` (private per-record blobs), `lib/email/` on Resend (`to` = `CONTACT_US_EMAIL`, `replyTo` = submitter — Resend's `reply_to` gives exact parity), `lib/hubspot.ts` (port `530fa4f` nearly as-is — it faithfully preserves the "no token ⇒ pretend the contact exists ⇒ skip create" semantics; wrap in `after()` from `next/server` so it doesn't block the redirect), `lib/recaptcha.ts` (**with the score threshold**), `lib/schemas.ts`, `middleware.ts` (Basic auth, timing-safe compare), `/admin/leads` (re-check auth in the page, `noindex`, `dynamic = 'force-dynamic'`).
+`lib/leads/store.ts` (private per-record blobs), `lib/email/` on Resend (`to` = `CONTACT_US_EMAIL`, `replyTo` = submitter — Resend's `reply_to` gives exact parity), `lib/hubspot.ts` (port `530fa4f` nearly as-is — it faithfully preserves the "no token ⇒ pretend the contact exists ⇒ skip create" semantics; wrap in `after()` from `next/server` so it doesn't block the redirect), `lib/recaptcha.ts` (**with the score threshold**), `lib/schemas.ts`, `proxy.ts` (Basic auth, timing-safe compare), `/admin/leads` (re-check auth in the page, `noindex`, `dynamic = 'force-dynamic'`).
 
 Middleware alone isn't sufficient for a page rendering PII — matchers are easy to get subtly wrong and the failure mode is publishing your customer list.
 
@@ -305,7 +317,7 @@ Client: `CourseNav`, `CourseVideo`, `ReadMore`, `CourseOutline`, `EnrollButton`,
 
 **YouTube:** currently an eager `<iframe>` next to the h1 — hundreds of KB of third-party JS competing with LCP on the money page. Hand-roll a facade: poster + play button, mount the real iframe with `autoplay=1&enablejsapi=1` on click, then attach `YT.Player`. `next/third-parties`' `YouTubeEmbed` won't work — it gives no JS API, so we'd lose the video events. Behavior change: `VideoPlay` fires from the click rather than `onStateChange`. Same semantics, big LCP win.
 
-**`?offer=` allowlist:** `export const enrollOffers = { default: 'kfgaAStf', ... } as const` in `content/site.ts`; `page.tsx` reads `searchParams.offer`, looks it up, falls back to `default` on miss. Kills the injection and gives named campaign codes instead of raw Kajabi ids in ad URLs.
+**`?offer=` allowlist:** `export const enrollOffers = { default: 'kfgaAStf', ... } as const` in `content/site.ts`; `page.tsx` does `const { offer } = await props.searchParams` (async in Next 16 — see Framework constraints), looks it up, falls back to `default` on miss. Kills the injection and gives named campaign codes instead of raw Kajabi ids in ad URLs.
 
 **Analytics — `lib/analytics.ts` as a thin typed facade**, not a hook (5 call sites don't justify one) and not inline (they absolutely justify one guard):
 
