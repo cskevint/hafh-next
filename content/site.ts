@@ -37,7 +37,14 @@ export const SITE = {
  * shortlink. The PHP nav pointed at `/course`, which meant every nav click paid
  * a redirect hop. The shortlink still exists for ad creative and QR codes.
  */
-export const NAV_LINKS = [
+export type NavLink = {
+  href: string;
+  label: string;
+  /** Rendered as a superscript flag, e.g. the "NEW!" on the course link. */
+  badge?: string;
+};
+
+export const NAV_LINKS: readonly NavLink[] = [
   {
     href: "/at-home-dog-boarding-course",
     label: "Online Course",
@@ -47,7 +54,7 @@ export const NAV_LINKS = [
   { href: "/gallery", label: "Gallery" },
   { href: "/contactus", label: "Contact Us" },
   { href: "/aboutus", label: "About Us" },
-] as const;
+];
 
 /** Footer "Quick links" column. Points at canonical extensionless URLs; the
  * PHP used `.php` hrefs here. */
