@@ -1,11 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
+    // Lets lib/routes.ts import content/site.ts with an explicit extension, so
+    // scripts/check-redirects.mjs can load the same module under plain Node
+    // (Node's ESM resolver requires the extension; tsconfig paths don't apply).
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
