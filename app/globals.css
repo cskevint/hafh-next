@@ -4,12 +4,49 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+ * Brand palette
+ *
+ * These are the same eight colors the PHP site shipped, renamed. The Bootstrap
+ * build used semantically inverted names -- `info` was cream, `warning` was
+ * light blue, `success` was tan, `danger` was near-black -- which made every
+ * class name actively misleading. Values are byte-identical to
+ * styles/sass/src/custom-bootstrap.scss; only the names changed.
+ *
+ * Legacy name -> new name:
+ *   primary   -> brand        secondary -> brown
+ *   success   -> tan          info      -> cream
+ *   warning   -> sky          danger    -> ink
+ *   light     -> bone         dark      -> espresso
+ *
+ * brand-bright and cta are off-palette colors that only appear in inline
+ * styles on the course sales page.
+ * ------------------------------------------------------------------------- */
+@theme {
+  --color-brand: #0279ad;
+  --color-brown: #956230;
+  --color-tan: #e1b482;
+  --color-cream: #efd6ba;
+  --color-sky: #aae4f7;
+  --color-ink: #350d09;
+  --color-bone: #fcf7f3;
+  --color-espresso: #230906;
+
+  --color-brand-bright: #069ee0;
+  --color-cta: #bd4d3d;
+
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 @theme inline {
+  /* Gilroy for headings, Lato for body -- matching the PHP exactly.
+   * Both vars are supplied by next/font in app/layout.tsx. */
+  --font-heading: var(--font-gilroy);
+  --font-body: var(--font-lato);
+  --font-sans: var(--font-lato);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -83,6 +120,17 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Point shadcn's semantic tokens at the brand palette so its primitives
+ * (Button, Switch, RadioGroup, focus rings) are on-brand out of the box
+ * instead of neutral grey. */
+:root {
+  --primary: var(--color-brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-brown);
+  --secondary-foreground: #ffffff;
+  --ring: var(--color-brand);
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -117,14 +165,162 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ---------------------------------------------------------------------------
+ * Base element styles
+ *
+ * The PHP site leaned on Bootstrap's element defaults -- most headings carry no
+ * size class at all. Tailwind's Preflight resets headings to `font-size: inherit;
+ * font-weight: inherit`, so those defaults must be restored or every heading
+ * collapses to 16px. Values below were MEASURED from production at 1440px
+ * rather than read off Bootstrap's docs (see plans/ Phase 0 findings).
+ *
+ * All sizes are fixed, not fluid -- Bootstrap's RFS is not in play here.
+ * Headings run at line-height 1.2, body copy at 1.5.
+ *
+ * Note h6 is deliberately NOT in the Gilroy set: the source rule covers only
+ * h1-h5, so h6 renders in Lato. Verified on production.
+ * ------------------------------------------------------------------------- */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    /* The iOS overscroll gutter. Route groups override this via [data-surface]. */
+    background-color: var(--color-cream);
+  }
+
+  html:has([data-surface="brown"]) {
+    background-color: var(--color-brown);
+  }
+
+  html:has([data-surface="white"]) {
+    background-color: #ffffff;
+  }
+
   body {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5;
     @apply bg-background text-foreground;
   }
-  html {
-    @apply font-sans;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-family: var(--font-heading);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+  h2 {
+    font-size: 2rem;
+  }
+  h3 {
+    font-size: 1.75rem;
+  }
+  h4 {
+    font-size: 1.5rem;
+  }
+  h5 {
+    font-size: 1.25rem;
+  }
+  h6 {
+    font-size: 1rem;
+  }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Ported utilities
+ *
+ * Only rules that are genuinely global live here. Component-scoped CSS from
+ * styles/main.css (the course accordion chrome, .read-more, .ios-switch,
+ * .enroll-modal) lands alongside the component that needs it, so this file
+ * doesn't accumulate styles for markup that does not exist yet.
+ * ------------------------------------------------------------------------- */
+@layer components {
+  /* Homepage hero band: cream -> bone vertical gradient. */
+  .header-bg {
+    background: linear-gradient(
+      180deg,
+      var(--color-cream),
+      var(--color-bone)
+    );
+  }
+
+  /* Responsive wrapper for the Google Maps iframe embed. */
+  .google-maps {
+    position: relative;
+    height: 400px;
+    overflow: hidden;
+  }
+
+  .google-maps iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Course page "Why Choose Dog Boarding?" cards. */
+  .infobox {
+    border: 1px solid var(--color-cream);
+    background: var(--color-bone);
+  }
+
+  .infobox:hover {
+    background: #ffffff;
+    box-shadow: 0 0 100px 0 #0000000f;
+    cursor: grab;
+  }
+
+  /* Checkmark bullet lists -- three color variants, each a PNG bullet placed
+   * in the left gutter. Used on the course page's "What you'll learn" and
+   * "Who this course is for / NOT for" sections. */
+  .checkmark-list li,
+  .blue-checkmark-list li,
+  .brown-checkmark-list li {
+    position: relative;
+    list-style: none;
+  }
+
+  .checkmark-list li::before,
+  .blue-checkmark-list li::before,
+  .brown-checkmark-list li::before {
+    position: absolute;
+    content: "";
+    width: 20px;
+    height: 24px;
+    left: -31px;
+    top: 0;
+    background: url("/images/course/check.png");
+  }
+
+  .blue-checkmark-list li::before {
+    background: url("/images/course/leftcheck.png");
+  }
+
+  .brown-checkmark-list li::before {
+    background: url("/images/course/rightcheck.png");
   }
 }

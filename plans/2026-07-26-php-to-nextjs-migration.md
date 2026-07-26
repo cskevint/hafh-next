@@ -38,6 +38,73 @@ Verified against the bundled docs in `node_modules/next/dist/docs/`, which the s
 6. **`next/image` defaults changed**: `16` removed from `imageSizes`, new `minimumCacheTTL` and `qualities` defaults, and local images with query strings behave differently. Relevant when tuning the course page's LCP work.
 7. **PPR's `experimental_ppr` segment flag is removed**; `serverRuntimeConfig`/`publicRuntimeConfig` are gone (env vars only).
 
+## Phase 0 findings (measured against the live site, 2026-07-26)
+
+Captured from production in Chrome at a 1440px viewport. These replace assumptions in the original plan text.
+
+### Measured base type scale
+
+Probed with clean injected elements (the hero `h1` carries `display-5 fw-bold text-white`, so sampling it directly gives 48px/700 and is misleading). True base styles:
+
+| Selector | size | weight | line-height | family |
+|---|---|---|---|---|
+| `body` / `p` | 16px | 400 | 24px (1.5) | Lato |
+| `h1` | 40px (2.5rem) | 500 | 48px (1.2) | Gilroy-Medium |
+| `h2` | 32px (2rem) | 500 | 38.4px (1.2) | Gilroy-Medium |
+| `h3` | 28px (1.75rem) | 500 | 33.6px (1.2) | Gilroy-Medium |
+| `h4` | 24px (1.5rem) | 500 | 28.8px (1.2) | Gilroy-Medium |
+| `h5` | 20px (1.25rem) | 500 | 24px (1.2) | Gilroy-Medium |
+| `h6` | 16px (1rem) | 500 | 19.2px (1.2) | **Lato** — confirms `h6` is excluded from the Gilroy rule |
+| `.lead` | 20px | 300 | 30px (1.5) | Lato |
+| `.fs-4` | 24px | 400 | 36px (1.5) | Lato |
+| `.fs-5` | 20px | 400 | 30px (1.5) | Lato |
+| `.display-5` | 48px (3rem) | 300 | 57.6px (1.2) | Lato |
+
+All sizes are **fixed, not fluid** — `.display-5` measures exactly 3rem, so Bootstrap's RFS is not in play. Headings are a clean 1.2 line-height ratio; body copy 1.5. `.btn-primary` is `bg #0279ad`, white text, `border-radius: 800px` (`rounded-pill` = 50rem), padding `8px 24px`.
+
+### The Instagram embed is half-broken — replace it
+
+`embed.js` does run and does render (one iframe, `instagram-media-rendered`, 540×581) showing the profile header, avatar, "422 followers", "241 posts". But **all six post thumbnails are permanently blank grey squares** with only video play icons — the images never load, even after a full load and scroll. Visually this is worse than either working or absent: six empty boxes beside three good dog photos.
+
+Decision: drop the embed and `embed.js` entirely (also removes a cross-origin iframe from the critical path). Replace with additional real gallery images plus a styled "Follow us on Instagram" link.
+
+Also: **all five `<img>` on `/gallery` lack `alt`** — the three gallery photos *and* both nav logos. Fix repo-wide during the port, not just on this page.
+
+### Anchor `id`s are on HEADINGS, not `<section>`s
+
+The original plan said the ids sit on `<section>` elements. They do not:
+
+`#testimonials` `h1` · `#why-choose` **`h2`** · `#learn` `h1` · `#outline` `h1` · `#coach` `h1` · `#audience` `h1` · `#prelaunch` **`h3`** · `#faqs` `h1` · `#disclaimer` `h1`
+
+Consequence: when `SectionTracker` moves tracking onto wrapper elements, the `id`s must be *deliberately* re-placed on the `<section>`s (with `scroll-mt-*`) and removed from the headings — that's a change in DOM contract, so verify each of the seven `CourseNav` anchor links still lands correctly.
+
+### The 7 fbq `ViewContent` events, confirmed empirically
+
+The page has **10 `h1`s**. The tracker fires only for an `h1` that has an `id` and becomes visible:
+
+| `h1` | id | fires? |
+|---|---|---|
+| "Turn your love for dogs…" (hero) | none | no |
+| Testimonials / What you'll learn / Course Outline / Meet your coach / Who this course is for: / Frequently asked questions / Disclaimer | `testimonials` `learn` `outline` `coach` `audience` `faqs` `disclaimer` | **yes — these 7** |
+| "Who this course is NOT for:" | none | no |
+| "Coming soon!" (dead modal) | `enroll` | no — `offsetParent === null`, never visible |
+
+`#why-choose` (`h2`) and `#prelaunch` (`h3`) have ids but are not `h1`, so they never fire. Reproduce exactly these seven names with `content_type: 'heading'`.
+
+Heading census: `h1=10, h2=20, h3=74, h4=0, h5=0` — no `h4`/`h5` at all, and 74 `h3`s (52 accordion lessons + 16 FAQ questions + others). Confirms the hierarchy needs fixing and that Radix's `h3`-wrapped `AccordionTrigger` pushes lesson titles to `h4`.
+
+### The three malformed-HTML regions all repair cleanly
+
+Verified against the live DOM. Write the natural JSX — no bug-compatibility needed:
+
+1. **`<p class="fs-4 mb-0">Daily Answers…</h4>`** → browser discards the stray `</h4>` and closes the `<p>`. Resolves to `div.shadow-lg.rounded-4.p-3 > [h2, p.fs-4 ×4]`.
+2. **Audience section, missing `</div>`** → repairs to the intended two columns: `section > div.container > div.row > [div.col-lg-6.p-4.rounded-5 (h1#audience + ul.blue-checkmark-list), div.col-lg-6.p-4.rounded-sm-5 (h1 + ul.brown-checkmark-list)]`, 7 items each.
+3. **FAQs section, stray `</div>`** → discarded harmlessly. Resolves to `section > div.container > [h1#faqs, div.row > div.col-md-6.col-lg-6.mb-4 ×16]`.
+
+### Still outstanding from Phase 0
+
+Resend domain verification and creating the Vercel Blob store both require account access — they gate Phase 4/5, not Phases 1–3.
+
 ## Bugs on `530fa4f` that must NOT be carried forward
 
 Each of these would have broken a page or a lead flow. They are the reason we rewrite rather than resume.
