@@ -1,5 +1,99 @@
 # Migrate houndawayfromhome.com from PHP to Next.js on Vercel
 
+---
+
+## STATUS — Phases 1–9 built, cutover outstanding
+
+Build is complete and pushed to `main`. Verified against a real production
+build (`next build` + `next start`): typecheck clean, lint clean, 15 routes,
+and `check-redirects` green at **51/51** (REDIRECT 31/31, CANONICAL 11/11,
+GATED 1/1, GONE 8/8).
+
+### 🔴 TODO — needs Kevin
+
+These are all credential- or account-gated; none are code.
+
+1. 🔴 **Verify the sending domain in Resend.** Top risk in the whole
+   migration — misconfigured SPF/DKIM/DMARC means contact-form leads stop
+   arriving *silently*, with no bounce you'd see. Test with mail-tester and
+   send to Gmail, Outlook and iCloud. Mitigated but not solved by the fact that
+   every submission is persisted before the send is attempted.
+2. 🔴 **Create the Vercel Blob store.** `access: 'private'` is confirmed
+   available in `@vercel/blob` 2.6.1. On Vercel it authenticates via OIDC, so no
+   static token is needed in production; locally use `vercel env pull`.
+3. 🔴 **Set `ADMIN_PASSWORD` in Vercel** — `/admin/leads` 401s for everyone
+   until it exists. It fails closed on purpose.
+4. 🔴 **Set the remaining env vars** — see the table in `README.md`.
+5. 🔴 **Regression-test the fix that motivated private Blob:** after the first
+   lead is written, confirm the blob URL **403s when fetched anonymously**.
+6. 🔴 **Decide analytics handling for the first deploy.** Prefer a preview
+   deploy: a production deploy fires real GA4 + Meta Pixel events even on a
+   `*.vercel.app` URL, before DNS moves.
+7. 🔴 **Confirm the `/enroll` Kajabi URL** is the live one
+   (`hafh.mykajabi.com/offers/kfgaAStf/checkout`). Centralized in
+   `content/site.ts`, so it's a one-line change.
+8. 🔴 **Phase 10 — cutover.** Point DNS, keep the PHP host reachable at
+   `old.houndawayfromhome.com` for 48h for diffing, run `check-redirects`
+   against production, resubmit the sitemap in Search Console, watch Coverage
+   for two weeks, then delete `hafh-web`.
+
+### 🔴 Deferred by choice (not blockers)
+
+- 🔴 Screenshot-diff every page at 375 / 768 / 1440 against production. Spot
+  checks were done throughout; a systematic sweep was not.
+- 🔴 Meta Pixel Helper + GA4 DebugView walkthrough on a preview deploy with
+  `NEXT_PUBLIC_ANALYTICS_MODE=debug`, ticking off all five event types and all
+  seven `ViewContent` names. The code is in place and typed; it has not been
+  observed firing against real Meta tooling.
+- 🔴 Test the course-page videos on a real iPhone — iOS Low Power Mode blocks
+  muted autoplay, and the poster is what users see if it does.
+- 🔴 Unit tests for `lib/leads/*`. The logic is deliberately separated from the
+  Server Actions to make this easy; it just hasn't been written.
+- 🔴 Re-export oversized favicons; `mstile-150x150.png` is actually 270×270.
+- 🔴 Flesh out `/services` (a two-sentence stub, excluded from the sitemap to
+  match current behavior).
+
+### ✅ Done
+
+| | Phase | Commit |
+|---|---|---|
+| ✅ | Scaffold — Next 16.2.12, Tailwind v4, shadcn/ui on Radix, 11 components | `7134842` |
+| ✅ | **1** — design tokens, fonts, measured type scale, `content/site.ts` | `dba6a34` |
+| ✅ | **2** — routing/SEO layer + `check-redirects` (31 redirect rules) | `120efa2` |
+| ✅ | **3a** — SiteHeader, SiteFooter, newsletter pipeline, homepage | `aa794bc` |
+| ✅ | **3b** — aboutus, faqs, gallery, services, error pages | `63e7a7e` |
+| ✅ | **4** — Resend, HubSpot, reCAPTCHA, admin gate, private Blob storage | `9e0287d` |
+| ✅ | **5** — `/contactus` form, Server Action, reCAPTCHA score check | `a2dd330` |
+| ✅ | **6 + 7** — landing funnel pages and the quiz | `b01393b` |
+| ✅ | **8** — course sales page, content extraction, GIF→video | `2a9b510` |
+| ✅ | **9** — analytics wiring, README, lint clean | `e390a02` |
+
+**✅ Phase 0** completed early and folded into the findings section below —
+except the two account-gated items, which are TODO 1 and 2 above.
+
+### ✅ Old-site bugs fixed along the way
+
+- ✅ reCAPTCHA v3 checked only `success` — true for any valid token regardless
+  of score. The contact form had **no effective bot protection**. Now checks
+  score and action.
+- ✅ Quiz lead gate was bypassable by hand-editing the URL to `?question=DONE`.
+- ✅ Contact submissions were never persisted, only emailed — an SMTP failure
+  destroyed the enquiry. Now stored *before* the send is attempted.
+- ✅ `?offer=` was interpolated from `$_REQUEST` straight into the Kajabi URL.
+  Now an allowlist.
+- ✅ `/enroll` pointed at the stale `learn.houndawayfromhome.com` host while the
+  course page had moved, so the quiz's three CTAs hit a dead checkout.
+- ✅ `robots.txt` disallowed a page that also carried `noindex`, so Google could
+  never crawl it to see the directive.
+- ✅ `admin/leads.php` redirected unauthorized IPs but never called `exit()`, so
+  it rendered the lead list anyway.
+- ✅ Truncated copy on the course page (`"…challenges is neces"`).
+- ✅ Wrong `alt` text naming the wrong person; missing `alt` on five images.
+- ✅ Instagram embed rendered six permanently blank thumbnails — replaced.
+- ✅ 60MB of assets → 6.2MB; 18.5MB of course GIFs → ~1.5MB of video.
+
+---
+
 ## Context
 
 `hafh-web/` is a PHP 8 / Apache / Bootstrap 5 site for Hound Away From Home (dog boarding & daycare, San Mateo CA) plus an online course funnel. It's deployed at www.houndawayfromhome.com and deploys by hitting `/admin/updatesite` which runs `git pull --rebase` on the host. Content is hardcoded in PHP, forms post to PHP handlers that email via PHPMailer over SMTP port 25, and leads land in CSV files on disk.
@@ -263,14 +357,14 @@ leads/ebook/...      leads/contact/...
 
 Each phase is independently verifiable. Order matters: the SEO/routing layer is **second**, not last, because it's the highest-risk-of-silent-damage area and the only one with an automated test.
 
-### Phase 0 — Decisions and long-lead items (before any code)
+### ✅ Phase 0 — Decisions and long-lead items  *(done, except the two account-gated items — see TODO 1 & 2)*
 
 - **Start Resend domain verification now.** DKIM/SPF DNS propagation is on the critical path and email *is* the business.
 - Create the Vercel Blob store; **confirm private-read + OIDC auth on a throwaway preview deploy** before Phase 4 depends on it. OIDC only exists on Vercel, so local dev needs `vercel env pull` and a real token.
 - Load the **live** `/gallery` and check whether the Instagram *profile* embed (`data-instgrm-permalink` → `/houndawayfromhomeinc/`, not a post) still renders — Instagram deprecated profile embeds, so it likely already degrades to a bare link. If dead: replace with three more gallery images plus a styled "Follow us on Instagram" link and drop `embed.js` (~200 lines of placeholder markup).
 - Capture the **live DOM** of the course page's pre-launch banner and audience/FAQ boundaries (the 3 malformed-HTML regions).
 
-### Phase 1 — Repo + skeleton
+### ✅ Phase 1 — Repo + skeleton
 
 `git init` in `hafh-next/`, `create-next-app` (TS, App Router, no `src/`), Tailwind v4, `shadcn init` + the 11 components. Copy this plan to `plans/`. Write `CLAUDE.md`.
 
@@ -284,7 +378,7 @@ Note the responsive `rounded-*` utilities are a **custom Bootstrap build feature
 
 **Verify:** `/` renders with correct fonts (this is where the `"Lato", serif` bug surfaces), correct palette, and a type scale measured side-by-side against production.
 
-### Phase 2 — Routing + SEO layer
+### ✅ Phase 2 — Routing + SEO layer
 
 `lib/routes.ts` as the single source, feeding `next.config.ts` `redirects()`, `app/sitemap.ts`, `app/robots.ts`, and `scripts/check-redirects.mjs`.
 
@@ -311,7 +405,7 @@ In Vercel: apex → `www` (308); confirm `trailingSlash: false` (the default).
 
 **Verify:** `check-redirects.mjs` green against a preview deploy.
 
-### Phase 3 — `(main)` static pages
+### ✅ Phase 3 — `(main)` static pages
 
 `content/site.ts`, `content/faqs.ts`. Then `SiteHeader` (one nav array, shadcn `Sheet` for mobile with focus trap + Escape + scroll lock, linking `/at-home-dog-boarding-course` **directly** so nav clicks don't cost a 307), `SiteFooter` (server) + `NewsletterForm` (client island), `/`, `/aboutus`, `/faqs`, `/gallery`, `/services`, `not-found.tsx`, `error.tsx`, `global-error.tsx`.
 
@@ -322,7 +416,7 @@ In Vercel: apex → `www` (308); confirm `trailingSlash: false` (the default).
 
 **Verify:** screenshot diff at 375/768/1440 against production.
 
-### Phase 4 — Lead pipeline + admin
+### ✅ Phase 4 — Lead pipeline + admin  *(code done; needs Blob store + env vars)*
 
 `lib/leads/store.ts` (private per-record blobs), `lib/email/` on Resend (`to` = `CONTACT_US_EMAIL`, `replyTo` = submitter — Resend's `reply_to` gives exact parity), `lib/hubspot.ts` (port `530fa4f` nearly as-is — it faithfully preserves the "no token ⇒ pretend the contact exists ⇒ skip create" semantics; wrap in `after()` from `next/server` so it doesn't block the redirect), `lib/recaptcha.ts` (**with the score threshold**), `lib/schemas.ts`, `proxy.ts` (Basic auth, timing-safe compare), `/admin/leads` (re-check auth in the page, `noindex`, `dynamic = 'force-dynamic'`).
 
@@ -330,7 +424,7 @@ Middleware alone isn't sufficient for a page rendering PII — matchers are easy
 
 **Verify:** write a lead from a preview deploy, read it in `/admin/leads`, and **confirm the blob URL 403s when fetched anonymously** — regression-test the exact bug being fixed.
 
-### Phase 5 — `/contactus`
+### ✅ Phase 5 — `/contactus`  *(code done; needs Resend + reCAPTCHA keys to verify)*
 
 `ContactForm` + `lib/actions/contact.ts`. Fields exactly as today: `name`(req), `email`(req), `phone`, `quote` radio (daycare default), `boardingFrom`/`boardingTo` (revealed only when `quote=boarding`), `dogType`, `dogAge`, `dogState` radio, `dogVaccinations` switch, `message`, honeypot `fax_number`, reCAPTCHA v3.
 
@@ -340,7 +434,7 @@ Middleware alone isn't sufficient for a page rendering PII — matchers are easy
 
 **Verify:** real email in the real inbox with correct `reply-to`; honeypot rejected; forged/absent token rejected; the Blob record exists even when the email send is forced to fail.
 
-### Phase 6 — `(landing)`: ebook, guide, video
+### ✅ Phase 6 — `(landing)`: ebook, guide, video
 
 Shared `LeadCaptureForm` + `lib/actions/lead-capture.ts`. `LandingHeader` must be **prop-configurable** — the quiz shows a 200px logo plus a tagline on question 0 and a 100px logo with no tagline thereafter, which the branch's hardcoded 200px can't express. `LegalFooter`: fix the `http://` link to `https://`; `new Date().getFullYear()` changes the hardcoded `© 2025` to 2026 (fine, just deliberate).
 
@@ -348,7 +442,7 @@ Shared `LeadCaptureForm` + `lib/actions/lead-capture.ts`. `LandingHeader` must b
 
 **Verify:** HubSpot contact appears; both redirect destinations correct; Vimeo `ended` and tab-refocus both fire the modal.
 
-### Phase 7 — Quiz
+### ✅ Phase 7 — Quiz
 
 **Client state as source of truth, with the step number — and only the step number — mirrored to the URL** via `window.history.pushState` (supported since Next 14.1; `useSearchParams` observes it). Back/Forward works with no server round trip, and `?question=3` deep links keep working. Pure client state breaks Back, which users actually exercise in a 7-step quiz — Back would exit the page and lose all seven answers.
 
@@ -369,7 +463,7 @@ return 'consider';
 
 **Verify:** all 21 option paths; all three branches including gate precedence; Back/Forward; `?question=N` deep links; the gate can't be URL-bypassed.
 
-### Phase 8 — Course page
+### ✅ Phase 8 — Course page
 
 Last, because every primitive it needs now exists. 825 lines of PHP → a ~110-line `page.tsx` of pure composition, 17 components, 9 content modules.
 
@@ -414,11 +508,11 @@ This **is** the replacement for the PHP's dev stub — without it every call thr
 
 Section `id`s must stay on the `<section>` elements — `CourseNav` links to all seven anchors and they may be in ad creative. Add `scroll-mt-*` for the sticky-nav offset.
 
-### Phase 9 — Analytics parity pass
+### 🔴 Phase 9 — Analytics parity pass  *(wiring done; the Pixel Helper / DebugView walkthrough is outstanding)*
 
 Meta Pixel Helper + GA4 DebugView on a preview deploy with a `NEXT_PUBLIC_ANALYTICS_MODE=debug` escape hatch (gate on `VERCEL_ENV`, not the PHP's `STAGE` — otherwise you cannot verify pixel parity on a preview, which is exactly when you need to). Walk the course page and tick off all five event types and all seven `ViewContent` names. Restore the `<noscript>` pixel `<img>`.
 
-### Phase 10 — Cutover
+### 🔴 Phase 10 — Cutover  *(not started — needs DNS)*
 
 Point DNS at Vercel; keep the PHP host reachable at `old.houndawayfromhome.com` for 48h for diffing; run `check-redirects.mjs` against production; resubmit the sitemap in Search Console; watch Coverage for two weeks. Then delete `hafh-web`.
 

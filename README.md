@@ -12,12 +12,65 @@ findings measured against production.
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in what you need; see notes below
+cp .env.example .env.local   # fill in what you need; see below
 npm run dev
 ```
 
-Everything degrades gracefully without credentials **except `ADMIN_PASSWORD`**,
-which fails closed — `/admin/leads` returns 401 until it's set.
+The app **builds and runs with no environment variables at all** — every
+integration degrades gracefully. The catch is that the lead flows will *look*
+like they work while quietly storing and sending nothing, so don't read anything
+into a success message until the vars below are set.
+
+## Environment variables
+
+Set these in Vercel → Project → Settings → Environment Variables (and in
+`.env.local` for local work).
+
+### Required for the site to actually function
+
+| Variable | Used by | If missing |
+|---|---|---|
+| `RESEND_API_KEY` | contact + lead-capture notifications | **No email is sent.** Logs a warning; the visitor still sees a success message |
+| `MAIL_FROM` | sender address, e.g. `Hound Away From Home <noreply@houndawayfromhome.com>` | No email is sent. Must be a **verified Resend domain** or delivery fails silently |
+| `CONTACT_US_EMAIL` | recipient for every form submission | No email is sent |
+| `BLOB_READ_WRITE_TOKEN` | lead storage + `/admin/leads` | **No leads are persisted.** Not needed on Vercel — auth there is an auto-rotating OIDC token. Locally, get one with `vercel env pull` |
+| `ADMIN_PASSWORD` | `/admin/leads` (HTTP Basic, any username) | **`/admin/leads` returns 401 for everyone.** This is the one variable that *fails closed*, deliberately — an admin page rendering customer PII must never be world-readable by default |
+
+### Strongly recommended
+
+| Variable | Used by | If missing |
+|---|---|---|
+| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | contact form, client side | Token is never minted |
+| `RECAPTCHA_SECRET_KEY` | contact form, server side | **Bot check is skipped entirely** (logs a warning). Honeypot and zod validation still apply |
+| `HUBSPOT_API_TOKEN` | ebook / guide / quiz capture | Contact upsert is a no-op — matching the PHP's behavior when its token was unset |
+
+### Analytics
+
+Both IDs were already public in the shipped PHP `<head>`; they are not secrets.
+
+| Variable | Notes |
+|---|---|
+| `NEXT_PUBLIC_GA_ID` | `G-FRD4XKQCPT`. Script is skipped if unset |
+| `NEXT_PUBLIC_FB_PIXEL_ID` | `1217184416699830`. Script is skipped if unset |
+| `NEXT_PUBLIC_ANALYTICS_MODE` | Set to `debug` to force analytics **on** in a preview deploy for parity checking |
+
+> **Analytics fire on production deployments only.** The gate is
+> `NEXT_PUBLIC_VERCEL_ENV === "production"`, which Vercel sets automatically. A
+> production deploy — even on a `*.vercel.app` URL, before DNS is pointed — will
+> send **real** GA4 and Meta Pixel events and pollute your reporting. To test
+> without that, deploy to a preview branch, or leave both IDs empty until
+> cutover.
+
+### Optional tuning
+
+| Variable | Default | Notes |
+|---|---|---|
+| `RECAPTCHA_MIN_SCORE` | `0.5` | v3 score threshold. The PHP checked only `success`, which is true for any valid token regardless of score — so it had no real bot protection |
+| `SPAM_SUBSTRINGS` | `serviseantilogin` | Comma-separated. Seeded with the one string the PHP hardcoded |
+| `EMAIL_DISALLOW_LIST` | empty | Comma-separated addresses to silently reject |
+
+> `.env.example` also lists `CONTACT_US_NAME`, which no code reads — a leftover.
+> Safe to ignore or delete.
 
 ## Scripts
 
