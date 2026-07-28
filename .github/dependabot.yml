@@ -1,0 +1,43 @@
+# Dependabot version updates.
+#
+# The lockfile has ~857 packages. Ungrouped, this config would open a PR per
+# package per bump and become noise you'd learn to ignore — which is worse
+# than not running it, because the security PRs get lost in the stream.
+# Everything below exists to keep the weekly volume at roughly one PR.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One PR a week for everything low-risk, rather than one per package.
+      # CI runs typecheck + lint + build on it, so the batch is verifiable.
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # Framework majors are breaking by definition in this stack — Next 16
+      # renamed middleware.ts to proxy.ts and stopped running ESLint during
+      # build. Per AGENTS.md those upgrades mean reading
+      # node_modules/next/dist/docs first, so they stay deliberate rather than
+      # arriving as an automated PR. Minor and patch bumps still flow.
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+
+  # Keeps actions/checkout and actions/setup-node current. Low volume, and
+  # stale action majors eventually stop getting security fixes.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
