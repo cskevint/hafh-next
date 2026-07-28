@@ -72,6 +72,35 @@ Both IDs were already public in the shipped PHP `<head>`; they are not secrets.
 > `.env.example` also lists `CONTACT_US_NAME`, which no code reads — a leftover.
 > Safe to ignore or delete.
 
+## Email — two separate systems
+
+Outbound and inbound mail are handled by different providers. Easy to conflate
+when debugging; they share nothing but the domain.
+
+**Outbound (app → you) — [Resend](https://resend.com).** Every form
+notification goes through `lib/email/index.ts` using `RESEND_API_KEY` and
+`MAIL_FROM`. Domain verification lives in DNS:
+
+| Record | Purpose |
+|---|---|
+| `resend._domainkey` TXT | DKIM signing key |
+| `send.houndawayfromhome.com` MX | bounce handling, → Amazon SES |
+| `send.houndawayfromhome.com` TXT | `v=spf1 include:amazonses.com ~all` |
+
+The dedicated `send.` subdomain is load-bearing — it keeps Resend's MX record
+from colliding with the inbound forwarding below. Don't "simplify" it onto the
+root domain.
+
+**Inbound (anyone → the domain) — [ImprovMX](https://improvmx.com).**
+Forwarding only, no mailboxes: root `MX` → `mx1/mx2.improvmx.com`, with
+`include:spf.improvmx.com` in the root SPF record. If `CONTACT_US_EMAIL` is an
+`@houndawayfromhome.com` address, form notifications reach you *through*
+ImprovMX — so a broken forward looks exactly like a broken send.
+
+DNS for all of the above is served by the registrar's nameservers
+(`dns1/dns2.registrar-servers.com`). The legacy DreamHost zone does **not**
+carry the Resend or ImprovMX records; don't re-point nameservers at it.
+
 ## Scripts
 
 | command | what it does |

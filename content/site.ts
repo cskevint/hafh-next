@@ -31,6 +31,26 @@ export const SITE = {
 } as const;
 
 /**
+ * The lead-magnet e-book delivered by the /download-free-ebook funnel.
+ *
+ * Hosted in a STANDALONE public Blob store, deliberately kept apart from the
+ * leads store — that one is private because it holds customer PII, and mixing a
+ * public marketing asset into it blurs a boundary that exists for a reason.
+ *
+ * `url` opens inline; `?download=1` makes Blob serve it as an attachment.
+ */
+export const EBOOK = {
+  title: "How to Work From Home, Cuddle Dogs, and Make Money!",
+  subtitle: "A Home Based Dog Sitting Business",
+  author: "Selena Trotter",
+  pages: 15,
+  url: "https://sokagylzaculnj4c.public.blob.vercel-storage.com/ebook/how-to-work-from-home-cuddle-dogs-and-make-money.pdf",
+} as const;
+
+/** Forces Content-Disposition: attachment instead of inline. */
+export const ebookDownloadUrl = `${EBOOK.url}?download=1`;
+
+/**
  * Primary navigation.
  *
  * `/at-home-dog-boarding-course` is linked DIRECTLY rather than via the `/course`

@@ -183,7 +183,9 @@
   }
 
   html {
-    /* The iOS overscroll gutter. Route groups override this via [data-surface]. */
+    /* The page surface. Route groups override this via [data-surface].
+     * Covers both the iOS overscroll gutter and — because SiteFooter is
+     * `mt-auto` — the flex gap above the footer on short pages. */
     background-color: var(--color-cream);
   }
 
@@ -199,7 +201,11 @@
     font-family: var(--font-body);
     font-size: 1rem;
     line-height: 1.5;
-    @apply bg-background text-foreground;
+    /* Deliberately NO background: body must stay transparent so the
+     * [data-surface] color on <html> shows through. Applying
+     * `bg-background` (white) here paints over it, which on a short page
+     * leaves a white band between the content and the mt-auto footer. */
+    @apply text-foreground;
   }
 
   h1,

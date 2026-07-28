@@ -10,7 +10,12 @@ import {
   type FormState,
 } from "@/lib/schemas";
 import { storeLead, type LeadKind } from "@/lib/leads/store";
-import { esc, sendNotification, MAIL_FOOTER } from "@/lib/email";
+import { esc, sendEmail, sendNotification, MAIL_FOOTER } from "@/lib/email";
+import {
+  EBOOK_SUBJECT,
+  ebookEmailHtml,
+  ebookEmailText,
+} from "@/lib/email/ebook";
 import { upsertContact } from "@/lib/hubspot";
 
 /**
@@ -25,10 +30,10 @@ import { upsertContact } from "@/lib/hubspot";
  *    earlier migration attempt. Errors now return FormState instead.
  *  - HubSpot runs in after() so a slow CRM call never delays the response.
  *
- * NOT changed, deliberately: the ebook flow still does not email the PDF. The
- * page promises "your download link is on its way" and the PHP only ever
- * notified the owner. Kevin chose to keep that behavior for now; the 10.5MB PDF
- * is therefore not in the repo.
+ * The ebook funnel now DELIVERS. The PHP (and the first pass of this port) only
+ * notified the owner while the button said "Send me the PDF!", so the visitor
+ * got nothing. The PDF lives in a standalone public Blob store and the link is
+ * emailed below; see DELIVERABLES.
  */
 type Funnel = Extract<LeadKind, "ebook" | "guide" | "quiz">;
 
@@ -36,6 +41,22 @@ const SUBJECTS: Record<Funnel, string> = {
   ebook: "[HAFH] E-book Request",
   guide: "[HAFH] Guide Request",
   quiz: "[HAFH] Quiz Completion",
+};
+
+/**
+ * Visitor-facing follow-up, per funnel. Keyed rather than special-cased on
+ * `funnel === "ebook"` so the guide and quiz can be filled in later without
+ * restructuring; a funnel with no entry simply sends nothing, which is the
+ * current behavior for those two.
+ */
+const DELIVERABLES: Partial<
+  Record<Funnel, (name: string) => { subject: string; html: string; text: string }>
+> = {
+  ebook: (name) => ({
+    subject: EBOOK_SUBJECT,
+    html: ebookEmailHtml(name),
+    text: ebookEmailText(name),
+  }),
 };
 
 export async function captureLead(
@@ -79,9 +100,30 @@ export async function captureLead(
     },
   });
 
-  // Don't make the visitor wait on HubSpot or the notification email.
+  // Don't make the visitor wait on HubSpot or either email.
   after(async () => {
     await upsertContact(email, name);
+
+    // Deliver to the visitor FIRST — that's the one they're waiting on, and
+    // the owner notification must not be able to starve it.
+    const deliverable = DELIVERABLES[funnel]?.(name);
+    if (deliverable) {
+      const result = await sendEmail({
+        to: email,
+        subject: deliverable.subject,
+        html: deliverable.html,
+        text: deliverable.text,
+        replyTo: process.env.CONTACT_US_EMAIL,
+      });
+      if (!result.sent) {
+        // The lead is already persisted, so this is recoverable by hand off
+        // the owner notification below.
+        console.error(
+          `[lead-capture] ${funnel} delivery to visitor failed: ${result.error}`,
+        );
+      }
+    }
+
     await sendNotification({
       subject: SUBJECTS[funnel],
       html: `<h2>${esc(SUBJECTS[funnel])}</h2>

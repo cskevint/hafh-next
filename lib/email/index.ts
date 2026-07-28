@@ -25,14 +25,27 @@ export function emailConfigured(): boolean {
 
 export type SendResult = { sent: boolean; error?: string };
 
-export async function sendNotification({
+/**
+ * Sends to an explicit recipient.
+ *
+ * This is the VISITOR-facing path (e-book delivery). Owner notifications go
+ * through sendNotification, which pins `to` to CONTACT_US_EMAIL so a caller
+ * can't accidentally address one of those at a visitor.
+ */
+export async function sendEmail({
+  to,
   subject,
   html,
+  text,
   replyTo,
 }: {
+  to: string;
   subject: string;
   html: string;
-  replyTo?: { email: string; name?: string };
+  /** Plain-text alternative. HTML-only mail scores worse with spam filters,
+   * and deliverability is the top risk flagged for these flows. */
+  text?: string;
+  replyTo?: string;
 }): Promise<SendResult> {
   const resend = client();
   if (!resend) {
@@ -41,9 +54,8 @@ export async function sendNotification({
   }
 
   const from = process.env.MAIL_FROM;
-  const to = process.env.CONTACT_US_EMAIL;
-  if (!from || !to) {
-    console.error("[email] MAIL_FROM or CONTACT_US_EMAIL missing");
+  if (!from) {
+    console.error("[email] MAIL_FROM missing");
     return { sent: false, error: "misconfigured" };
   }
 
@@ -53,7 +65,8 @@ export async function sendNotification({
       to: [to],
       subject,
       html,
-      ...(replyTo ? { replyTo: replyTo.email } : {}),
+      ...(text ? { text } : {}),
+      ...(replyTo ? { replyTo } : {}),
     });
     if (error) {
       console.error("[email] Resend returned an error:", error);
@@ -64,6 +77,31 @@ export async function sendNotification({
     console.error("[email] send threw:", err);
     return { sent: false, error: "exception" };
   }
+}
+
+export async function sendNotification({
+  subject,
+  html,
+  replyTo,
+}: {
+  subject: string;
+  html: string;
+  replyTo?: { email: string; name?: string };
+}): Promise<SendResult> {
+  // Checked before the recipient so an unconfigured install still reports
+  // "not-configured" rather than "misconfigured" — the README documents this.
+  if (!emailConfigured()) {
+    console.warn(`[email] RESEND_API_KEY not set; would have sent: ${subject}`);
+    return { sent: false, error: "not-configured" };
+  }
+
+  const to = process.env.CONTACT_US_EMAIL;
+  if (!to) {
+    console.error("[email] CONTACT_US_EMAIL missing");
+    return { sent: false, error: "misconfigured" };
+  }
+
+  return sendEmail({ to, subject, html, replyTo: replyTo?.email });
 }
 
 /** Minimal HTML escaping — every value below is visitor-supplied. */

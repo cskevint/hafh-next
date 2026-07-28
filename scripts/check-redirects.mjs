@@ -19,6 +19,7 @@ import {
   SITEMAP_ROUTES,
   UNLISTED_ROUTES,
 } from "../lib/routes.ts";
+import { EBOOK } from "../content/site.ts";
 
 const baseArgIndex = process.argv.indexOf("--base");
 const BASE = (
@@ -42,6 +43,7 @@ const groups = {
   CANONICAL: { pass: 0, failures: [] },
   GATED: { pass: 0, failures: [] },
   GONE: { pass: 0, failures: [] },
+  ASSET: { pass: 0, failures: [] },
 };
 
 function record(ok, group, label, detail) {
@@ -138,6 +140,23 @@ async function checkStatus(path, wantStatus, group) {
   }
 }
 
+/** HEAD an absolute off-site URL and assert it's live and the right type. */
+async function checkAsset(url, wantContentType) {
+  const label = `${url} (want 200 ${wantContentType})`;
+  try {
+    const res = await fetch(url, { method: "HEAD", redirect: "manual" });
+    const type = res.headers.get("content-type") ?? "";
+    record(
+      res.status === 200 && type.startsWith(wantContentType),
+      "ASSET",
+      label,
+      `got status=${res.status} content-type=${type || "none"}`,
+    );
+  } catch (err) {
+    record(false, "ASSET", label, `request failed: ${err.message}`);
+  }
+}
+
 console.log(`Checking redirects against ${BASE}\n`);
 
 for (const { source, destination, permanent } of ALL_REDIRECTS) {
@@ -164,6 +183,13 @@ for (const path of UNLISTED_ROUTES) {
 for (const path of MUST_404) {
   await checkStatus(path, 404, "GONE");
 }
+
+// Off-site assets we email to visitors. The e-book URL is a hardcoded constant
+// in content/site.ts, which is correct (it's deterministic) but means nothing
+// fails loudly if the blob is renamed or its store deleted — the lead magnet
+// would just quietly 404 in every delivery email. Checked here so it surfaces
+// in the same run as everything else. Absolute URL, so it ignores --base.
+await checkAsset(EBOOK.url, "application/pdf");
 
 console.log("\n");
 

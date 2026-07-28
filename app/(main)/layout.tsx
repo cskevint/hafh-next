@@ -7,7 +7,8 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
  * `data-surface` drives the <html> background (see globals.css). The PHP set
  * `<html class="bg-info">` per page; a single root layout can't set per-group
  * html classes, so the group declares its surface and CSS `:has()` resolves it.
- * This only affects the iOS overscroll gutter, but it's visible.
+ * This paints the iOS overscroll gutter AND the gap above the mt-auto footer
+ * on short pages, so `body` must stay transparent (see globals.css).
  *
  * Note: no <FlashMessage /> here. The PHP's $_SESSION notice pattern is gone —
  * form feedback is returned by each Server Action to the form that submitted.
