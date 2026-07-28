@@ -18,17 +18,43 @@ updates:
       minor-and-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+    # Major bumps of the framework and toolchain are upgrade *projects*, not
+    # merges, so they don't arrive as automated PRs. Minor and patch still flow.
+    #
+    # Learned the hard way on 2026-07-28: the first Dependabot run opened four
+    # major PRs and all four were wrong. typescript 5->7 and eslint 9->10 both
+    # failed CI; @types/node 20->26 would have typed against a runtime two
+    # majors ahead of the Node 24 we actually deploy on; nanoid 5->6 was for a
+    # package nothing imported.
+    #
+    # NOT a blanket "ignore all majors" — ignore rules also suppress Dependabot
+    # *security* PRs, and a security fix sometimes only exists in a new major
+    # (@hono/node-server 1.x -> 2.0.5 was exactly that). Runtime libraries are
+    # left free to raise major PRs so a security bump can still reach us.
     ignore:
-      # Framework majors are breaking by definition in this stack — Next 16
-      # renamed middleware.ts to proxy.ts and stopped running ESLint during
-      # build. Per AGENTS.md those upgrades mean reading
-      # node_modules/next/dist/docs first, so they stay deliberate rather than
-      # arriving as an automated PR. Minor and patch bumps still flow.
+      # Next 16 renamed middleware.ts to proxy.ts and stopped running ESLint
+      # during build. Per AGENTS.md these mean reading
+      # node_modules/next/dist/docs first.
       - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint-config-next
         update-types: [version-update:semver-major]
       - dependency-name: react
         update-types: [version-update:semver-major]
       - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+      # New compiler / new rule set — both broke CI on first contact.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      # Type packages must track the runtime and framework, never lead them.
+      - dependency-name: "@types/*"
+        update-types: [version-update:semver-major]
+      # Tailwind majors rewrite the config format.
+      - dependency-name: tailwindcss
+        update-types: [version-update:semver-major]
+      - dependency-name: "@tailwindcss/*"
         update-types: [version-update:semver-major]
 
   # Keeps actions/checkout and actions/setup-node current. Low volume, and
