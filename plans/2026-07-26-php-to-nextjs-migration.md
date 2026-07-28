@@ -2,54 +2,67 @@
 
 ---
 
-## STATUS — Phases 1–9 built, cutover outstanding
+## STATUS — ✅ LIVE. Cutover complete 2026-07-28.
 
-Build is complete and pushed to `main`. Verified against a real production
-build (`next build` + `next start`): typecheck clean, lint clean, 15 routes,
-and `check-redirects` green at **51/51** (REDIRECT 31/31, CANONICAL 11/11,
-GATED 1/1, GONE 8/8).
+`https://www.houndawayfromhome.com` serves the Next.js app from Vercel.
+Typecheck clean, lint clean (0 errors), 15 routes, and `check-redirects` green
+against **production** at **52/52** — REDIRECT 31/31, CANONICAL 11/11,
+GATED 1/1, GONE 8/8, ASSET 1/1.
 
-### 🔴 TODO — needs Kevin
+### ✅ Cutover checklist — all done
 
-These are all credential- or account-gated; none are code.
+1. ✅ **Sending domain verified in Resend.** DKIM at `resend._domainkey`, a
+   dedicated bounce subdomain `send.houndawayfromhome.com` (MX → Amazon SES,
+   plus its own SPF), and `_dmarc` at `p=none`. The `send.` subdomain is
+   load-bearing: it keeps Resend's MX off the root, where ImprovMX lives.
+   Confirmed by real delivery, not just by the dashboard.
+2. ✅ **Blob stores created.** Two, deliberately: `hafh-next-blob` (private,
+   connected to the project, holds lead PII) and `ebook` (public, standalone,
+   holds only the lead magnet). Keeping a public marketing asset out of the PII
+   store preserves the boundary that made it private in the first place.
+3. ✅ **`ADMIN_PASSWORD` set** — `/admin/leads` challenges with Basic auth and
+   renders.
+4. ✅ **All env vars set.** Twelve total; `NEXT_PUBLIC_GA_ID` and
+   `NEXT_PUBLIC_FB_PIXEL_ID` verified against the values in `README.md`.
+5. ✅ **Private-Blob regression test passed** — a stored lead's blob URL 403s
+   when fetched anonymously.
+6. ✅ **Analytics live.** Production HTML contains `G-FRD4XKQCPT`,
+   `googletagmanager`, `1217184416699830` and `connect.facebook.net`.
+7. ✅ **`/enroll` Kajabi URL confirmed** working
+   (`hafh.mykajabi.com/offers/kfgaAStf/checkout`).
+8. ✅ **Phase 10 — cutover done.** DNS moved, HTTPS valid, redirects green
+   against production.
 
-1. 🔴 **Verify the sending domain in Resend.** Top risk in the whole
-   migration — misconfigured SPF/DKIM/DMARC means contact-form leads stop
-   arriving *silently*, with no bounce you'd see. Test with mail-tester and
-   send to Gmail, Outlook and iCloud. Mitigated but not solved by the fact that
-   every submission is persisted before the send is attempted.
-2. 🔴 **Create the Vercel Blob store.** `access: 'private'` is confirmed
-   available in `@vercel/blob` 2.6.1. On Vercel it authenticates via OIDC, so no
-   static token is needed in production; locally use `vercel env pull`.
-3. 🔴 **Set `ADMIN_PASSWORD` in Vercel** — `/admin/leads` 401s for everyone
-   until it exists. It fails closed on purpose.
-4. 🔴 **Set the remaining env vars** — see the table in `README.md`.
-5. 🔴 **Regression-test the fix that motivated private Blob:** after the first
-   lead is written, confirm the blob URL **403s when fetched anonymously**.
-6. 🔴 **Decide analytics handling for the first deploy.** Prefer a preview
-   deploy: a production deploy fires real GA4 + Meta Pixel events even on a
-   `*.vercel.app` URL, before DNS moves.
-7. 🔴 **Confirm the `/enroll` Kajabi URL** is the live one
-   (`hafh.mykajabi.com/offers/kfgaAStf/checkout`). Centralized in
-   `content/site.ts`, so it's a one-line change.
-8. 🔴 **Phase 10 — cutover.** Point DNS, keep the PHP host reachable at
-   `old.houndawayfromhome.com` for 48h for diffing, run `check-redirects`
-   against production, resubmit the sitemap in Search Console, watch Coverage
-   for two weeks, then delete `hafh-web`.
+### 🔴 Still open
+
+- 🔴 **Resubmit the sitemap in Search Console**, then watch Coverage for two
+  weeks. This is the payoff for the 31 redirect rules — without it, Google
+  re-crawls on its own schedule and the `.php` → canonical consolidation takes
+  far longer to register. `https://www.houndawayfromhome.com/sitemap.xml`.
+- 🔴 **Delete the DreamHost zone and the domain from that account.** As of
+  2026-07-28 `ns1.dreamhost.com` still answers `205.196.222.31`, so anyone on a
+  stale resolver still lands on the old PHP site. Registry NS TTL is 172800
+  (48h). **Migrate or empty the mailboxes first** — the DreamHost MX pointed at
+  its own relay, so real mail may be stored there, and deleting the domain
+  destroys it.
+- 🔴 **Delete `hafh-web`** once the above is done and Coverage looks clean.
 
 ### 🔴 Deferred by choice (not blockers)
 
-- 🔴 Screenshot-diff every page at 375 / 768 / 1440 against production. Spot
-  checks were done throughout; a systematic sweep was not.
-- 🔴 Meta Pixel Helper + GA4 DebugView walkthrough on a preview deploy with
-  `NEXT_PUBLIC_ANALYTICS_MODE=debug`, ticking off all five event types and all
-  seven `ViewContent` names. The code is in place and typed; it has not been
-  observed firing against real Meta tooling.
+- 🔴 Screenshot-diff every page at 375 / 768 / 1440 against the old site. Spot
+  checks were done throughout; a systematic sweep was not. **Time-boxed** — this
+  becomes impossible once the DreamHost zone is deleted, since there'll be no
+  reachable copy of the old site left to diff against.
+- 🔴 Meta Pixel Helper + GA4 DebugView walkthrough, ticking off all five event
+  types and all seven `ViewContent` names. Both tags are confirmed present in
+  production HTML, but no one has watched them actually fire in Meta's tooling.
 - 🔴 Test the course-page videos on a real iPhone — iOS Low Power Mode blocks
   muted autoplay, and the poster is what users see if it does.
 - 🔴 Unit tests for `lib/leads/*`. The logic is deliberately separated from the
   Server Actions to make this easy; it just hasn't been written.
-- 🔴 Re-export oversized favicons; `mstile-150x150.png` is actually 270×270.
+- 🔴 Re-export oversized favicons. Confirmed 2026-07-28: `mstile-150x150.png`
+  is **270×270**; `android-chrome-144x144.png` and `apple-touch-icon.png` are
+  correct at 144×144 and 180×180.
 - 🔴 Flesh out `/services` (a two-sentence stub, excluded from the sitemap to
   match current behavior).
 
@@ -67,9 +80,11 @@ These are all credential- or account-gated; none are code.
 | ✅ | **6 + 7** — landing funnel pages and the quiz | `b01393b` |
 | ✅ | **8** — course sales page, content extraction, GIF→video | `2a9b510` |
 | ✅ | **9** — analytics wiring, README, lint clean | `e390a02` |
+| ✅ | **10** — cutover; e-book delivery; short-page background fix | `cdfa6ff` |
 
-**✅ Phase 0** completed early and folded into the findings section below —
-except the two account-gated items, which are TODO 1 and 2 above.
+**✅ Phase 0** completed early and folded into the findings section below. Its
+two account-gated items — Resend domain verification and the Blob store — were
+closed at cutover; see items 1 and 2 of the cutover checklist above.
 
 ### ✅ Old-site bugs fixed along the way
 
@@ -195,9 +210,9 @@ Verified against the live DOM. Write the natural JSX — no bug-compatibility ne
 2. **Audience section, missing `</div>`** → repairs to the intended two columns: `section > div.container > div.row > [div.col-lg-6.p-4.rounded-5 (h1#audience + ul.blue-checkmark-list), div.col-lg-6.p-4.rounded-sm-5 (h1 + ul.brown-checkmark-list)]`, 7 items each.
 3. **FAQs section, stray `</div>`** → discarded harmlessly. Resolves to `section > div.container > [h1#faqs, div.row > div.col-md-6.col-lg-6.mb-4 ×16]`.
 
-### Still outstanding from Phase 0
+### ✅ Resolved from Phase 0
 
-Resend domain verification and creating the Vercel Blob store both require account access — they gate Phase 4/5, not Phases 1–3.
+Resend domain verification and creating the Vercel Blob store both required account access, so they gated Phase 4/5 rather than Phases 1–3. Both were completed at cutover on 2026-07-28.
 
 ## Bugs on `530fa4f` that must NOT be carried forward
 
@@ -357,7 +372,7 @@ leads/ebook/...      leads/contact/...
 
 Each phase is independently verifiable. Order matters: the SEO/routing layer is **second**, not last, because it's the highest-risk-of-silent-damage area and the only one with an automated test.
 
-### ✅ Phase 0 — Decisions and long-lead items  *(done, except the two account-gated items — see TODO 1 & 2)*
+### ✅ Phase 0 — Decisions and long-lead items  *(done; the two account-gated items closed at cutover)*
 
 - **Start Resend domain verification now.** DKIM/SPF DNS propagation is on the critical path and email *is* the business.
 - Create the Vercel Blob store; **confirm private-read + OIDC auth on a throwaway preview deploy** before Phase 4 depends on it. OIDC only exists on Vercel, so local dev needs `vercel env pull` and a real token.
@@ -416,7 +431,7 @@ In Vercel: apex → `www` (308); confirm `trailingSlash: false` (the default).
 
 **Verify:** screenshot diff at 375/768/1440 against production.
 
-### ✅ Phase 4 — Lead pipeline + admin  *(code done; needs Blob store + env vars)*
+### ✅ Phase 4 — Lead pipeline + admin  *(live; Blob store created and env vars set 2026-07-28)*
 
 `lib/leads/store.ts` (private per-record blobs), `lib/email/` on Resend (`to` = `CONTACT_US_EMAIL`, `replyTo` = submitter — Resend's `reply_to` gives exact parity), `lib/hubspot.ts` (port `530fa4f` nearly as-is — it faithfully preserves the "no token ⇒ pretend the contact exists ⇒ skip create" semantics; wrap in `after()` from `next/server` so it doesn't block the redirect), `lib/recaptcha.ts` (**with the score threshold**), `lib/schemas.ts`, `proxy.ts` (Basic auth, timing-safe compare), `/admin/leads` (re-check auth in the page, `noindex`, `dynamic = 'force-dynamic'`).
 
@@ -424,7 +439,7 @@ Middleware alone isn't sufficient for a page rendering PII — matchers are easy
 
 **Verify:** write a lead from a preview deploy, read it in `/admin/leads`, and **confirm the blob URL 403s when fetched anonymously** — regression-test the exact bug being fixed.
 
-### ✅ Phase 5 — `/contactus`  *(code done; needs Resend + reCAPTCHA keys to verify)*
+### ✅ Phase 5 — `/contactus`  *(live; Resend + reCAPTCHA keys set and submission verified end to end 2026-07-28)*
 
 `ContactForm` + `lib/actions/contact.ts`. Fields exactly as today: `name`(req), `email`(req), `phone`, `quote` radio (daycare default), `boardingFrom`/`boardingTo` (revealed only when `quote=boarding`), `dogType`, `dogAge`, `dogState` radio, `dogVaccinations` switch, `message`, honeypot `fax_number`, reCAPTCHA v3.
 
@@ -508,13 +523,36 @@ This **is** the replacement for the PHP's dev stub — without it every call thr
 
 Section `id`s must stay on the `<section>` elements — `CourseNav` links to all seven anchors and they may be in ad creative. Add `scroll-mt-*` for the sticky-nav offset.
 
-### 🔴 Phase 9 — Analytics parity pass  *(wiring done; the Pixel Helper / DebugView walkthrough is outstanding)*
+### ✅ Phase 9 — Analytics parity pass  *(shipped and live; the Pixel Helper / DebugView walkthrough stays deferred)*
 
 Meta Pixel Helper + GA4 DebugView on a preview deploy with a `NEXT_PUBLIC_ANALYTICS_MODE=debug` escape hatch (gate on `VERCEL_ENV`, not the PHP's `STAGE` — otherwise you cannot verify pixel parity on a preview, which is exactly when you need to). Walk the course page and tick off all five event types and all seven `ViewContent` names. Restore the `<noscript>` pixel `<img>`.
 
-### 🔴 Phase 10 — Cutover  *(not started — needs DNS)*
+Both tags are confirmed present in production HTML as of 2026-07-28. The manual walkthrough against Meta's tooling has not been done — it remains in *Deferred by choice* above.
 
-Point DNS at Vercel; keep the PHP host reachable at `old.houndawayfromhome.com` for 48h for diffing; run `check-redirects.mjs` against production; resubmit the sitemap in Search Console; watch Coverage for two weeks. Then delete `hafh-web`.
+### ✅ Phase 10 — Cutover  *(done 2026-07-28)*
+
+What actually happened, versus the plan:
+
+- **DNS.** Nameservers moved to the registrar (`dns1/dns2.registrar-servers.com`) with apex `A → 216.150.1.1` and `www CNAME → …vercel-dns-016.com`. Vercel issued certs for both hostnames; apex 308s to `www`.
+- **`old.houndawayfromhome.com` was never stood up.** The old site stayed reachable anyway during the propagation window, because the DreamHost zone kept answering for resolvers holding the stale delegation. That made diffing possible without the extra hostname, but it is *not* a durable substitute — see the deletion item in *Still open*.
+- **`check-redirects` green against production** at 52/52.
+- 🔴 Sitemap resubmission in Search Console and the two-week Coverage watch are still outstanding.
+
+#### Propagation gotcha worth remembering
+
+For several hours the domain resolved differently depending on the resolver — `8.8.8.8` had already flipped to Vercel while `1.1.1.1` and local resolvers still returned DreamHost's `205.196.222.31`. Symptom: "HTTPS is broken." Reality: HTTPS was fine on Vercel the whole time; those clients were reaching Apache on the old host, which served its own valid cert. Diagnose by forcing the Vercel IP (`curl --resolve`) before touching any certificate config.
+
+#### The firewall will challenge your own tooling
+
+Running `check-redirects` against production fires ~51 requests in a burst, including 8 known-dead `.php` paths. Vercel's automatic DDoS mitigation reads that as vulnerability scanning and starts returning `403` with `x-vercel-mitigated: challenge` — for *every* path, not just the `.php` ones, and it does not decay quickly. Attack Mode was off the whole time; this is `System Mitigations`.
+
+Real browsers pass the JS challenge transparently, so visitors are unaffected — but every non-JS client (curl, CI, monitoring) fails it. To get a clean run:
+
+```bash
+vercel firewall system-bypass add <your-ip>
+npm run check:redirects -- --base https://www.houndawayfromhome.com
+vercel firewall system-bypass remove <your-ip>   # don't leave this in place
+```
 
 ---
 
@@ -522,15 +560,59 @@ Point DNS at Vercel; keep the PHP host reachable at `old.houndawayfromhome.com` 
 
 `redirect.php` (the maintenance gate), `development.html`, `includes/devserver.php`, `includes/debug.php` (the breakpoint indicator — devtools does this), `admin/updatesite.php` (Vercel deploys on push), `#comingSoonModal`, Inter, the 4 unused Gilroy weights + 13 unused italic/extra TTFs, the 8.2MB of `learn_*.png`, `paws{,1,2,3}.png`, `course-thumbnail.png`, `logo-640x640.png`, `logo-32x32.png`, the 0-byte `favicon.gif`, `styles/sass/`, `vendor/`, `_archive/` (32MB of zips), all `.DS_Store`.
 
-**The 10.5MB `hound_away_from_home_business_ebook.pdf`** is referenced by nothing in the entire tree, and we're keeping the current ebook behavior (no automated send), so it stays out of the repo. Keep it in Blob or locally for manual follow-up rather than committing a 10.5MB binary into a fresh repo's history.
+**The 10.5MB `hound_away_from_home_business_ebook.pdf`** stays out of the repo — committing a 10.5MB binary into a fresh history is permanent, and it would ride along in every deployment. It is **not** unported, though: see *E-book delivery* below.
 
 **Deferred:** re-exporting the oversized favicons (23–39KB for 144–180px icons; `mstile-150x150.png` is actually 270×270), fleshing out `/services` (a two-sentence stub, not in the sitemap today — preserve that), dark mode (don't).
 
 ---
 
+## ✅ E-book delivery *(added 2026-07-28, `cdfa6ff`)*
+
+**This is a behavior change from the PHP, made deliberately.** The old site — and the first pass of this port — only notified the owner while the submit button read *"Send me the PDF!"*. Visitors got nothing. The PDF sat orphaned at the old web root, referenced by no `.php`, `.html`, `.js` or `.htaccess` in the entire tree, so someone was presumably mailing it by hand off the `[HAFH] E-book Request` notifications.
+
+Now:
+
+- The PDF lives in the standalone public `ebook` Blob store. Its URL is a hardcoded constant in `content/site.ts`.
+- `lib/email/ebook.ts` builds the visitor email; `DELIVERABLES` in `lib/actions/lead-capture.ts` keys it by funnel, so **guide and quiz are unchanged** and can be filled in later without restructuring.
+- The visitor email sends *before* the owner notification, so a failure on our side cannot starve the one the customer is waiting on.
+
+**Why the URL is hardcoded rather than resolved through the Blob API.** It's deterministic — public Blob URLs are `https://<store-id>.public.blob.vercel-storage.com/<pathname>`, and the upload used no random suffix. A runtime lookup would need a second token env var (the `ebook` store isn't connected to the project), cost a round-trip per submission, and add a failure mode inside `after()` — where the visitor has already been redirected and nobody would ever see the error. That is precisely the silent-failure class this document catalogs everywhere else.
+
+The real risk of hardcoding is that a renamed blob 404s quietly inside every delivery email. Mitigated in tooling instead of in the request path: `check-redirects` gained an **ASSET** group that HEADs the URL and asserts `200 application/pdf`.
+
+**PDF metadata was corrected** before upload — Canva had left `/Title: "Sara- de HAFH Free E-book"`, `/Author: "Sara Botero"` (the designer, not the author named on the cover), and internal design IDs in `/Keywords`.
+
+**Email HTML constraints.** Table-based layout with fully inline styles: Outlook renders through Word's engine and drops flexbox, grid, and most `<style>` blocks. System font stack rather than Gilroy/Lato — mail clients refuse `@font-face`, and the fallback would have been Times. A plain-text alternative ships alongside the HTML because HTML-only mail scores worse with spam filters, which matters given risk #1 below.
+
+---
+
+## ✅ Mail architecture — two providers, one domain
+
+Easy to conflate when debugging, so: **outbound is Resend, inbound is ImprovMX.** They share nothing but the domain name.
+
+Resend signs with DKIM at `resend._domainkey` and bounces through a dedicated `send.houndawayfromhome.com` subdomain (MX → Amazon SES). That subdomain is load-bearing — putting Resend's MX on the root would collide with ImprovMX's. ImprovMX is forwarding-only, no mailboxes, root `MX → mx1/mx2.improvmx.com`.
+
+Consequence worth internalizing: if `CONTACT_US_EMAIL` is an `@houndawayfromhome.com` address, owner notifications reach you *through* ImprovMX. **A broken forward is indistinguishable from a broken send.** Check both sides before concluding Resend is at fault.
+
+Neither provider's records exist in the legacy DreamHost zone. Don't re-point nameservers there.
+
+---
+
+## ✅ The `body` background trap *(fixed 2026-07-28, `cdfa6ff`)*
+
+Route groups declare their page surface via `data-surface`, which `globals.css` resolves onto `<html>` with `:has()`. That was documented as affecting "only the iOS overscroll gutter" — it doesn't.
+
+`SiteFooter` is `mt-auto`, so on a short page it's pushed to the bottom of the flex column and opens a gap between the content and the footer. `body` carried `@apply bg-background` — and `--background` is `oklch(1 0 0)`, white — which painted over the `<html>` surface color and filled that gap with white. Visible on `/contactus` after a successful submit, and latent on the whole `(landing)` group, where the surface is **brown** and the mismatch would have been far louder.
+
+Fix: `body` sets no background at all, so the `<html>` surface shows through. **Don't re-add `bg-background` to `body`** — shadcn scaffolding invites it, and it silently defeats the entire `data-surface` mechanism. Dark mode is unused here (`.dark` exists in `globals.css` but nothing applies it), so nothing depends on `body` painting a token.
+
+---
+
 ## Top risks
 
-1. **Email deliverability — by a wide margin the top risk.** Moving off the host's SMTP relay to Resend changes sending-domain reputation. Misconfigured SPF/DKIM/DMARC means contact-form leads stop arriving **silently** — no error, no visible bounce. This is the booking funnel for a real business. Mitigate: verify the domain properly (started in Phase 0), test with mail-tester, send to Gmail/Outlook/iCloud, and **persist every submission to Blob so a delivery failure is recoverable rather than fatal**.
+1. **Email deliverability — by a wide margin the top risk.** ✅ *Largely retired at cutover.* Moving off the host's SMTP relay to Resend changes sending-domain reputation. Misconfigured SPF/DKIM/DMARC means contact-form leads stop arriving **silently** — no error, no visible bounce. This is the booking funnel for a real business. Mitigate: verify the domain properly (started in Phase 0), test with mail-tester, send to Gmail/Outlook/iCloud, and **persist every submission to Blob so a delivery failure is recoverable rather than fatal**.
+
+   Status: domain verified, real contact-form and e-book submissions confirmed delivered, and every submission persists to Blob before any send is attempted. 🔴 Residual: mail-tester and a multi-provider (Outlook / iCloud) spot check were never run, and the new visitor-facing e-book email has only been seen in one client. Deliverability degrades gradually and silently, so this stays on the list rather than being closed.
 2. **`.php` redirect completeness** — a miss is a silent 404 on an indexed URL with possible ad spend behind it. Fully mitigated by Phase 2's script, which is why it's Phase 2.
 3. **fbq event parity** — Meta's optimizer runs on Lead/ViewContent volume. Silent breakage degrades ad performance over days with zero error signal. Mitigated by the typed facade, the debug escape hatch, and Phase 9.
 4. **Bootstrap-CSS-dependent form chrome** (Phase 5) — the most tedious hand-work in the project, with no shadcn equivalent.
@@ -540,12 +622,18 @@ Point DNS at Vercel; keep the PHP host reachable at `old.houndawayfromhome.com` 
 
 ## Verification summary
 
-- `npm run build` clean; `tsc --noEmit` clean.
-- `node scripts/check-redirects.mjs --base <url>` green against preview **and** production.
-- Screenshot diff every page at 375/768/1440 against production (or `old.houndawayfromhome.com` post-cutover).
-- Contact form: real inbox delivery with correct `reply-to`; honeypot rejected; bad token rejected; Blob record survives a forced email failure.
-- Newsletter + both lead magnets: HubSpot contact created, Blob record written, correct redirect destination.
-- `/admin/leads`: Basic auth challenges, renders both lists, and the raw blob URL **403s anonymously**.
-- Quiz: 21 option paths, 3 branches with gate precedence, Back/Forward, `?question=N` deep links, gate not URL-bypassable.
-- Course page: accordion individual + expand-all, read-more, 7 enroll buttons → correct Kajabi URL, `?offer=` allowlist rejects unknown values, all 5 fbq event types + all 7 `ViewContent` names, videos autoplay on iOS and respect `prefers-reduced-motion`.
-- Lighthouse on `/` and `/at-home-dog-boarding-course` — expect a large LCP/weight win on the latter.
+Status as of 2026-07-28.
+
+- ✅ `npm run build` clean; `tsc --noEmit` clean; `npm run lint` 0 errors (2 pre-existing warnings in `scripts/compare-sites.mjs`).
+- ✅ `node scripts/check-redirects.mjs --base <url>` green against production — 52/52.
+- 🔴 Screenshot diff every page at 375/768/1440 against the old site. Time-boxed: only possible while the DreamHost zone still answers.
+- ⚠️ Contact form: ✅ real inbox delivery with correct `reply-to`, and ✅ a live submission after reCAPTCHA went from skipped to enforced. 🔴 Honeypot rejection, bad-token rejection, and "Blob record survives a forced email failure" were never exercised.
+- ⚠️ Lead magnets: ✅ e-book end to end (Blob record, owner notification, visitor delivery email). 🔴 Guide, quiz, and the footer newsletter unverified since the HubSpot token went live.
+- ✅ `/admin/leads`: Basic auth challenges, renders, and the raw blob URL **403s anonymously**.
+- 🔴 Quiz: 21 option paths, 3 branches with gate precedence, Back/Forward, `?question=N` deep links, gate not URL-bypassable.
+- 🔴 Course page: accordion individual + expand-all, read-more, 7 enroll buttons → correct Kajabi URL, `?offer=` allowlist rejects unknown values, all 5 fbq event types + all 7 `ViewContent` names, videos autoplay on iOS and respect `prefers-reduced-motion`. *(The `/enroll` URL itself is ✅ confirmed working.)*
+- 🔴 Lighthouse on `/` and `/at-home-dog-boarding-course` — expect a large LCP/weight win on the latter.
+
+### 🔴 Highest-value gap
+
+The **quiz and course page have had no post-cutover verification at all**, and the course page is the revenue path — seven enroll buttons and the `ViewContent` events Meta's optimizer runs on. Everything verified so far has been the contact and e-book funnels.
