@@ -36,6 +36,6 @@
     "shadcn": "^4.16.0",
     "tailwindcss": "^4",
     "ttf2woff2": "^8.0.1",
-    "typescript": "^5"
+    "typescript": "^7"
   }
 }
