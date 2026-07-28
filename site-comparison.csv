@@ -1,0 +1,63 @@
+path,category,old_status,old_redirects,old_lands_on,new_status,new_redirects,new_lands_on,verdict,notes
+/,homepage,200,-,/,200,-,/,OK,same landing page
+/404.php,php-page,200,-,/404.php,404,-,/404.php,OK,handler/scaffolding intentionally removed
+/404,extensionless,200,-,/404,404,-,/404,OK,handler/scaffolding intentionally removed
+/500.php,php-page,200,-,/500.php,404,-,/500.php,OK,handler/scaffolding intentionally removed
+/500,extensionless,200,-,/500,500,-,/500,REVIEW,"expected 404, got 500"
+/aboutus.php,php-page,200,-,/aboutus.php,200,308,/aboutus,OK,canonicalized to extensionless
+/aboutus,extensionless,200,-,/aboutus,200,-,/aboutus,OK,same landing page
+/at-home-dog-boarding-course.php,php-page,200,-,/at-home-dog-boarding-course.php,200,308,/at-home-dog-boarding-course,OK,canonicalized to extensionless
+/at-home-dog-boarding-course,extensionless,200,-,/at-home-dog-boarding-course,200,-,/at-home-dog-boarding-course,OK,same landing page
+/contact-capture.php,php-page,200,302,/500,404,-,/contact-capture.php,OK,handler/scaffolding intentionally removed
+/contact-capture,extensionless,200,302,/500,404,-,/contact-capture,OK,handler/scaffolding intentionally removed
+/contact.php,php-page,200,302,/contactus,200,307,/contactus,OK,same landing page
+/contact,extensionless,200,302,/contactus,200,307,/contactus,OK,same landing page
+/contactus-mail.php,php-page,302,302,/contactus-mail.php,404,-,/contactus-mail.php,OK,handler/scaffolding intentionally removed
+/contactus-mail,extensionless,302,302,/contactus-mail,404,-,/contactus-mail,OK,handler/scaffolding intentionally removed
+/contactus.php,php-page,200,-,/contactus.php,200,308,/contactus,OK,canonicalized to extensionless
+/contactus,extensionless,200,-,/contactus,200,-,/contactus,OK,same landing page
+/course.php,php-page,200,302,/at-home-dog-boarding-course,200,307,/at-home-dog-boarding-course,OK,same landing page
+/course,extensionless,200,302,/at-home-dog-boarding-course,200,307,/at-home-dog-boarding-course,OK,same landing page
+/download-free-ebook.php,php-page,200,-,/download-free-ebook.php,200,308,/download-free-ebook,OK,canonicalized to extensionless
+/download-free-ebook,extensionless,200,-,/download-free-ebook,200,-,/download-free-ebook,OK,same landing page
+/ebook.php,php-page,200,302,/download-free-ebook,200,307,/download-free-ebook,OK,same landing page
+/ebook,extensionless,200,302,/download-free-ebook,200,307,/download-free-ebook,OK,same landing page
+/enroll.php,php-page,302,302,https://learn.houndawayfromhome.com/offers/kfgaAStf,307,307,https://hafh.mykajabi.com/offers/kfgaAStf/checkout,CHANGED,old -> https://learn.houndawayfromhome.com/offers/kfgaAStf; new -> https://hafh.mykajabi.com/offers/kfgaAStf/checkout (intentional: the old host is dead)
+/enroll,extensionless,302,302,https://learn.houndawayfromhome.com/offers/kfgaAStf,307,307,https://hafh.mykajabi.com/offers/kfgaAStf/checkout,CHANGED,old -> https://learn.houndawayfromhome.com/offers/kfgaAStf; new -> https://hafh.mykajabi.com/offers/kfgaAStf/checkout (intentional: the old host is dead)
+/faqs.php,php-page,200,-,/faqs.php,200,308,/faqs,OK,canonicalized to extensionless
+/faqs,extensionless,200,-,/faqs,200,-,/faqs,OK,same landing page
+/gallery.php,php-page,200,-,/gallery.php,200,308,/gallery,OK,canonicalized to extensionless
+/gallery,extensionless,200,-,/gallery,200,-,/gallery,OK,same landing page
+/guide.php,php-page,200,302,/watch-introductory-guide,200,307,/watch-introductory-guide,OK,same landing page
+/guide,extensionless,200,302,/watch-introductory-guide,200,307,/watch-introductory-guide,OK,same landing page
+/index.php,php-page,200,-,/index.php,200,308,/,OK,canonicalized: /index.php -> /
+/introductory-guide-video.php,php-page,200,-,/introductory-guide-video.php,200,308,/introductory-guide-video,OK,canonicalized to extensionless
+/introductory-guide-video,extensionless,200,-,/introductory-guide-video,200,-,/introductory-guide-video,OK,same landing page
+/is-dog-boarding-right-for-me.php,php-page,200,-,/is-dog-boarding-right-for-me.php,200,308,/is-dog-boarding-right-for-me,OK,canonicalized to extensionless
+/is-dog-boarding-right-for-me,extensionless,200,-,/is-dog-boarding-right-for-me,200,-,/is-dog-boarding-right-for-me,OK,same landing page
+/newsletter-capture.php,php-page,302,302,/newsletter-capture.php,404,-,/newsletter-capture.php,OK,handler/scaffolding intentionally removed
+/newsletter-capture,extensionless,302,302,/newsletter-capture,404,-,/newsletter-capture,OK,handler/scaffolding intentionally removed
+/quiz.php,php-page,200,302,/is-dog-boarding-right-for-me,200,307,/is-dog-boarding-right-for-me,OK,same landing page
+/quiz,extensionless,200,302,/is-dog-boarding-right-for-me,200,307,/is-dog-boarding-right-for-me,OK,same landing page
+/redirect.php,php-page,200,-,/redirect.php,404,-,/redirect.php,OK,handler/scaffolding intentionally removed
+/redirect,extensionless,200,-,/redirect,404,-,/redirect,OK,handler/scaffolding intentionally removed
+/services.php,php-page,200,-,/services.php,200,308,/services,OK,canonicalized to extensionless
+/services,extensionless,200,-,/services,200,-,/services,OK,same landing page
+/watch-introductory-guide.php,php-page,200,-,/watch-introductory-guide.php,200,308,/watch-introductory-guide,OK,canonicalized to extensionless
+/watch-introductory-guide,extensionless,200,-,/watch-introductory-guide,200,-,/watch-introductory-guide,OK,same landing page
+/about/,legacy-path,200,302,/aboutus,200,308>308,/aboutus,OK,same landing page
+/about,legacy-path,404,-,/about,200,308,/aboutus,OK,old returned 404; new serves it
+/questions/,legacy-path,200,302,/faqs,200,308>308,/faqs,OK,same landing page
+/questions,legacy-path,404,-,/questions,200,308,/faqs,OK,old returned 404; new serves it
+/photos/,legacy-path,200,302,/gallery,200,308>308,/gallery,OK,same landing page
+/photos,legacy-path,404,-,/photos,200,308,/gallery,OK,old returned 404; new serves it
+/contact-us/,legacy-path,200,302,/contactus,200,308>308,/contactus,OK,same landing page
+/contact-us,legacy-path,404,-,/contact-us,200,308,/contactus,OK,old returned 404; new serves it
+/admin/leads,admin,200,302,/404.php,401,-,/admin/leads,OK,now password-gated (was an IP allowlist)
+/admin/leads.php,admin,200,302,/404.php,404,-,/admin/leads.php,OK,old deploy hook / PHP admin correctly gone
+/admin/updatesite,admin,200,-,/admin/updatesite,401,-,/admin/updatesite,OK,now password-gated (was an IP allowlist)
+/admin/updatesite.php,admin,200,-,/admin/updatesite.php,404,-,/admin/updatesite.php,OK,old deploy hook / PHP admin correctly gone
+/robots.txt,static,200,-,/robots.txt,200,-,/robots.txt,OK,same landing page
+/sitemap.xml,static,200,-,/sitemap.xml,200,-,/sitemap.xml,OK,same landing page
+/browserconfig.xml,static,200,-,/browserconfig.xml,200,-,/browserconfig.xml,OK,same landing page
+/development.html,dev-scaffolding,200,-,/development.html,404,-,/development.html,OK,dev scaffolding intentionally removed
