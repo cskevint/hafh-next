@@ -9,7 +9,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 Single Next.js 16 (App Router, Turbopack) app; no backend/db services to start. Dependencies are refreshed by the startup update script (`npm install`), so just run commands directly.
 
 - Run dev: `npm run dev` (serves on port 3000). Standard scripts are in `package.json` / `README.md`.
-- Checks: `npm run lint`, `npm run typecheck`. There is **no automated test suite** (no `test` script/framework). `npm run check:redirects -- --base <url>` validates the legacy URL surface and needs a running server to hit.
+- Checks: `npm run lint`, `npm run typecheck`. There is **no automated test suite** (no `test` script/framework) and nothing verifies the legacy `.php` redirect surface — if you touch `lib/routes.ts`, check the affected URLs by hand.
 - Gotcha — everything degrades gracefully with no env vars, and this is misleading when verifying: form submissions (contact / lead capture / newsletter) return a **success** message even though nothing is emailed (Resend), persisted (Vercel Blob), or synced (HubSpot). The server logs the real outcome (e.g. `[leads] Blob not configured...`, `[email] RESEND_API_KEY not set...`). Do not treat a UI success as proof of delivery/persistence.
 - Lead persistence needs `BLOB_READ_WRITE_TOKEN` locally (`vercel env pull`); without it `/admin/leads` shows nothing. `/admin/leads` fails closed — returns 401 unless `ADMIN_PASSWORD` is set (HTTP Basic, any username).
 - Copy `.env.example` to `.env.local` to exercise the integrations; see `README.md` for what each variable does.

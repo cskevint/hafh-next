@@ -44,9 +44,9 @@ const LEARN_MEDIA = [
  * Course sales page — the largest page on the site (825 lines of PHP).
  *
  * Copy comes from content/course/generated.ts, scraped from the live DOM. See
- * that file and scripts/extract-course-content.mjs for why the rendered DOM is
- * the source rather than the PHP (three malformed-HTML regions the browser
- * silently repairs, plus ~10 heredoc-interpolated arrays).
+ * that file for why the rendered DOM was the source rather than the PHP (three
+ * malformed-HTML regions the browser silently repairs, plus ~10
+ * heredoc-interpolated arrays).
  *
  * Section ids moved from the HEADINGS onto the <section> wrappers. In the PHP
  * they sat on h1/h2/h3, which coupled the anchor targets to the heading

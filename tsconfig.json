@@ -7,9 +7,9 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
-    // Lets lib/routes.ts import content/site.ts with an explicit extension, so
-    // scripts/check-redirects.mjs can load the same module under plain Node
-    // (Node's ESM resolver requires the extension; tsconfig paths don't apply).
+    // Lets lib/routes.ts import content/site.ts with an explicit extension,
+    // which next.config.ts's standalone transpile requires (tsconfig `paths`
+    // don't apply there). See the comment on that import.
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",

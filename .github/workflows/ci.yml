@@ -4,12 +4,11 @@
 # nothing was checking lint before deploy. Vercel builds on push and would
 # happily ship lint errors. This is the only thing that catches them.
 #
-# Deliberately NOT here: `npm run check:redirects`. It fires ~51 requests at
-# production in a burst, including 8 known-dead .php paths, which Vercel's
-# automatic DDoS mitigation reads as vulnerability scanning — it then returns
-# 403 with `x-vercel-mitigated: challenge` on every path for a sustained
-# period. Run it by hand after a cutover, with a firewall system-bypass for
-# the IP you run it from. See plans/2026-07-26-php-to-nextjs-migration.md.
+# Note: nothing here checks the legacy `.php` redirect surface. If you add a
+# checker back, don't point it at production from CI — a burst of ~51 requests
+# including known-dead .php paths trips Vercel's automatic DDoS mitigation,
+# which then returns 403 with `x-vercel-mitigated: challenge` on every path for
+# a sustained period. See plans/2026-07-26-php-to-nextjs-migration.md.
 name: CI
 
 on:
