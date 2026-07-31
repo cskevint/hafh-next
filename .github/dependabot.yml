@@ -12,6 +12,20 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # Don't propose a version until it has been public for a week, matching
+    # `min-release-age=7` in .npmrc and `minimumReleaseAge` in bunfig.toml.
+    # Change all three together or they drift.
+    #
+    # A compromised release (chalk/debug, the Shai-Hulud waves) is typically
+    # found and unpublished within hours-to-days, so a week of quarantine means
+    # the ecosystem finds it before Dependabot offers it here.
+    #
+    # Safe to set, unlike an `ignore` rule: per GitHub's docs, cooldown applies
+    # to *version* updates only and explicitly NOT to *security* updates, so a
+    # security fix still arrives the day it ships. Raising this from Dependabot's
+    # undeclared 3-day default costs four days of latency on routine bumps.
+    cooldown:
+      default-days: 7
     groups:
       # One PR a week for everything low-risk, rather than one per package.
       # CI runs typecheck + lint + build on it, so the batch is verifiable.

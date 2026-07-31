@@ -1,0 +1,17 @@
+# Bun install configuration.
+#
+# This project installs with npm (package-lock.json, `npm ci` in CI, and npm on
+# Vercel). This file only takes effect if someone runs `bun install` locally —
+# it is a guardrail for that case, not the project's install policy. The npm
+# equivalent is `min-release-age` in .npmrc, which is what governs CI and
+# deploys.
+[install]
+# Refuse package versions published less than a week ago (seconds).
+#
+# Compromised-maintainer attacks on npm (chalk/debug, and the self-propagating
+# Shai-Hulud waves) are caught and unpublished within hours-to-days of release.
+# A week of quarantine means the ecosystem finds the malicious version before
+# this project installs it, at the cost of lagging legitimate releases by the
+# same week — an acceptable trade for a marketing site with no urgent need for
+# same-day dependency updates.
+minimumReleaseAge = 604800
