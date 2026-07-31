@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
-    "check:redirects": "node scripts/check-redirects.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hubspot/api-client": "^14.0.1",

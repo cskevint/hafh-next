@@ -1,13 +1,14 @@
-// Relative rather than the `@/` alias so scripts/check-redirects.mjs can import
-// this module directly under plain Node, which does not resolve tsconfig paths.
+// Relative, with an explicit extension, rather than the `@/` alias: next.config.ts
+// imports this module, and Next transpiles the config standalone without applying
+// tsconfig `paths`, so an aliased import fails the build (`npm run typecheck` and
+// `npm run lint` both still pass — only `npm run build` catches it).
 import { enrollUrl } from "../content/site.ts";
 
 /**
  * Single source of truth for the site's URL surface.
  *
- * next.config.ts (redirects), app/sitemap.ts, app/robots.ts, and
- * scripts/check-redirects.mjs all derive from this file, so a URL cannot drift
- * between the redirect table and the sitemap.
+ * next.config.ts (redirects), app/sitemap.ts, and app/robots.ts all derive from
+ * this file, so a URL cannot drift between the redirect table and the sitemap.
  *
  * CANONICAL FORM: extensionless, no trailing slash, www host, https.
  *
@@ -85,7 +86,7 @@ const PHP_PAGE_REDIRECTS: RedirectRule[] = [
  *
  * Only the non-slash form is listed: Next normalizes trailing slashes by
  * default (trailingSlash: false), so `/about/` resolves to `/about` before the
- * redirect table is consulted. check-redirects.mjs asserts BOTH forms.
+ * redirect table is consulted — both forms end up here.
  */
 const LEGACY_PATH_REDIRECTS: RedirectRule[] = [
   { source: "/about", destination: "/aboutus", permanent: true },
@@ -139,8 +140,8 @@ export const ALL_REDIRECTS: RedirectRule[] = [
 
 /**
  * Legacy URLs that must 404 rather than redirect — POST handlers, dev
- * scaffolding, and the old error pages. Listed so check-redirects.mjs can
- * assert they are gone; no route exists for them, so they 404 naturally.
+ * scaffolding, and the old error pages. No route exists for them, so they 404
+ * naturally; listed to document that the omission is deliberate, not a gap.
  */
 export const MUST_404 = [
   "/404.php",

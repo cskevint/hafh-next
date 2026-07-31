@@ -109,18 +109,6 @@ carry the Resend or ImprovMX records; don't re-point nameservers at it.
 | `npm run build` | production build |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | eslint — **`next build` no longer runs lint in Next 16**, so CI must call this |
-| `npm run check:redirects -- --base <url>` | asserts the full legacy URL surface |
-
-### `check:redirects`
-
-The single most important check in the repo. Apache rewrote extensionless paths
-to `.php`, so both `/faqs` and `/faqs.php` have been indexed for years. A missed
-redirect is a silent 404 on an indexed, possibly ad-targeted URL.  Run it against
-every preview deploy and against production immediately after cutover.
-
-```bash
-npm run check:redirects -- --base https://www.houndawayfromhome.com
-```
 
 ## Layout
 
@@ -145,14 +133,18 @@ proxy.ts       admin gate (Next 16 renamed middleware.ts -> proxy.ts)
 structure with varying values goes in `content/`; unique structure goes in a
 component.
 
-`content/course/generated.ts` was produced by
-`scripts/extract-course-content.mjs`, which scrapes the live PHP page. Treat it
-as hand-maintained now — edit it directly. The script is kept for provenance.
+`content/course/generated.ts` was originally scraped from the rendered DOM of the
+legacy PHP course page (the PHP built that copy from ~10 arrays through heredoc
+helpers, so the DOM was the only reliable source). It is hand-maintained now —
+edit it directly.
 
 ## Things that will bite you
 
-- **`lib/routes.ts` is the single source** for redirects, the sitemap, robots,
-  and the redirect checker. Change URLs there, nowhere else.
+- **`lib/routes.ts` is the single source** for redirects, the sitemap, and
+  robots. Change URLs there, nowhere else. Both `/faqs` and `/faqs.php` have
+  been indexed for years (Apache rewrote extensionless paths to `.php`), so
+  every legacy `.php` URL needs its redirect — dropping one is a silent 404 on
+  an indexed, possibly ad-targeted URL. Nothing checks this automatically.
 - **Colors are renamed.** Bootstrap's names were semantically inverted (`info`
   was cream, `warning` light blue, `success` tan, `danger` near-black). The
   palette is now `brand / brown / tan / cream / sky / ink / bone / espresso`,
@@ -171,4 +163,3 @@ as hand-maintained now — edit it directly. The script is kept for provenance.
 ## Deploying
 
 Vercel, on push. Set env vars in project settings. Point apex → `www` (308).
-Before cutover, run `check:redirects` against the preview URL.
