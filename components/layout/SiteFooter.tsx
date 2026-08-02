@@ -25,12 +25,25 @@ export function SiteFooter() {
 
         <nav className="lg:col-span-3" aria-label="Quick links">
           <h5>Quick links</h5>
-          <ul className="space-y-1">
+          {/* `inline-block py-2.5` rather than `space-y-1` on the list: these
+            * anchors were 20px tall, so the gap between them was dead space that
+            * looked tappable and wasn't. Padding on the anchor turns that same
+            * space into part of the target, reaching 44px without moving
+            * anything visually. Standalone nav links get no relief from WCAG
+            * 2.2 SC 2.5.8's inline-text exception — that only covers links sat
+            * inside a sentence.
+            *
+            * `-mx-1 px-1` widens the box for the short labels ("FAQs" is only
+            * 38px of text) while the negative margin keeps the text itself
+            * flush with the heading above. Left as `inline-block` rather than
+            * `block` on purpose: a full-width anchor would make the empty space
+            * out to the column edge navigate too. */}
+          <ul>
             {FOOTER_LINKS.map(({ href, label }) => (
               <li key={href}>
                 <Link
                   href={href}
-                  className="text-espresso underline-offset-4 hover:text-brand hover:underline"
+                  className="-mx-1 inline-block px-1 py-2.5 text-espresso underline-offset-4 hover:text-brand hover:underline"
                 >
                   {label}
                 </Link>

@@ -70,10 +70,13 @@ function SheetContent({
         {children}
         {showCloseButton && (
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
+            {/* `icon`, not `icon-sm`: this is the drawer's dismiss control on
+              * touch, where `icon-sm` renders 28px. `icon` is 44px on mobile and
+              * falls back to shadcn's 32px from `md` up. */}
             <Button
               variant="ghost"
               className="absolute top-3 right-3"
-              size="icon-sm"
+              size="icon"
             >
               <XIcon
               />

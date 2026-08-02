@@ -34,8 +34,15 @@ export type TrackedSection =
   | "faqs"
   | "disclaimer";
 
-/** The seven enroll button positions, typed so a misspelling can't quietly
- * lose an attribution bucket. */
+/** The enroll button positions, typed so a misspelling can't quietly lose an
+ * attribution bucket.
+ *
+ * `sticky` is the mobile-only bar and is NEW — it did not exist in the PHP. It
+ * gets its own bucket rather than reusing a nearby section's, so the seven
+ * original buckets stay directly comparable to their historical volume. Total
+ * enroll clicks will rise, because there is now a CTA on screen during the two
+ * long stretches that previously had none; that is the intended effect, not
+ * drift. Read `sticky` separately when comparing before and after. */
 export type EnrollLocation =
   | "header"
   | "discount"
@@ -43,7 +50,8 @@ export type EnrollLocation =
   | "learn"
   | "why-choose"
   | "prelaunch"
-  | "faqs";
+  | "faqs"
+  | "sticky";
 
 declare global {
   interface Window {

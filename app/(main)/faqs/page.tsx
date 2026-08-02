@@ -26,11 +26,20 @@ function Block({ block }: { block: FaqBlock }) {
     );
   }
   if (block.kind === "contactLink") {
+    /* With no `after`, this link IS the entire answer ("What are your rates?" →
+     * "Contact us!"), so it is a standalone target and needs the full 44px —
+     * WCAG 2.2 SC 2.5.8's inline-text exception only covers a link sitting
+     * inside a sentence. When `after` is present it is genuinely mid-sentence,
+     * and padding it out would wreck the line spacing the exception exists to
+     * protect. */
+    const standalone = !block.after;
     return (
       <p>
         <Link
           href="/contactus"
-          className="text-brown underline underline-offset-4 hover:text-brand"
+          className={`text-brown underline underline-offset-4 hover:text-brand ${
+            standalone ? "-mx-1 inline-block px-1 py-2.5" : ""
+          }`}
         >
           {block.text}
         </Link>

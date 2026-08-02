@@ -45,9 +45,11 @@ export default function WatchIntroductoryGuidePage() {
             />
           </div>
           <p className="my-3 mb-0 text-center">
+            {/* Standalone in its paragraph — full 44px, and an unconditional
+              * underline because hover does not exist on touch. */}
             <Link
               href="/at-home-dog-boarding-course"
-              className="text-brown underline-offset-4 hover:underline"
+              className="-mx-1 inline-block px-1 py-2.5 text-brown underline underline-offset-4 hover:text-brand"
             >
               Learn more about our online course!
             </Link>

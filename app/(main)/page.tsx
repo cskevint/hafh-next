@@ -117,14 +117,22 @@ export default function HomePage() {
       <section className="bg-cream">
         <div className="container mx-auto p-4 md:p-6 lg:p-12">
           <h1 className="mb-2 md:mb-12">Read our reviews!</h1>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {/* Two across on phones, not one. At one column each logo rendered
+            * ~146px tall plus padding, so this block alone ran about a full
+            * phone screen of nothing but logos between two content sections.
+            * Paired up they stay comfortably legible and cost half the scroll.
+            *
+            * flex-wrap rather than a grid because the list is now an odd count
+            * (three, since Facebook came out) — `justify-center` centres the
+            * leftover item instead of stranding it in column one. */}
+          <div className="flex flex-wrap items-center justify-center gap-6">
             {REVIEW_PLATFORMS.map(({ label, href, logo }) => (
               <a
                 key={label}
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center px-4 py-3 transition-opacity hover:opacity-80"
+                className="flex w-[42%] items-center justify-center px-4 py-3 transition-opacity hover:opacity-80 lg:w-[20%]"
               >
                 <Image
                   src={logo}
@@ -156,15 +164,20 @@ export default function HomePage() {
             <p className="mt-12 text-xl leading-normal">
               Now open in two San Mateo locations!
             </p>
+            {/* `text-brown` (#956230) on `bg-tan` (#e1b482) is about 2.8:1 —
+              * below the 4.5:1 WCAG AA floor, and these are the only links in
+              * the section. `text-espresso` clears it comfortably. The underline
+              * is now permanent rather than hover-only: hover does not exist on
+              * a phone, so without it these read as plain text. */}
             <ul className="list-disc pl-8">
               {LOCATIONS.map(({ name, cross, href }) => (
-                <li key={name}>
+                <li key={name} className="py-1">
                   {name} @{" "}
                   <a
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brown underline-offset-4 hover:underline"
+                    className="text-espresso underline underline-offset-4 hover:text-brand"
                   >
                     {cross}
                   </a>

@@ -56,7 +56,10 @@ export const SOCIAL_ICONS: Record<
   SocialKey,
   (props: IconProps) => React.ReactElement
 > = {
-  facebook: FacebookIcon,
+  /* No `facebook` key: the page is down, so it was dropped from SOCIALS and
+   * SocialKey no longer includes it. FacebookIcon above is kept exported and
+   * unused on purpose — restoring the link should be an edit to content/site.ts
+   * and one line here, not redrawing the glyph. */
   instagram: InstagramIcon,
   yelp: YelpIcon,
   youtube: YouTubeIcon,

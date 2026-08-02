@@ -51,11 +51,14 @@ export function NewsletterForm() {
           aria-describedby="newsletter-status"
           className="bg-white"
         />
+        {/* `icon`, not `lg`: the label is an icon, so `lg` gave it a 38px width
+          * from padding alone. `icon` is square — 44px on mobile, 32px from md
+          * up, which is exactly the Input's height at each breakpoint. */}
         <Button
           type="submit"
           disabled={pending}
           variant="secondary"
-          size="lg"
+          size="icon"
           aria-label="Sign up for the newsletter"
         >
           <Send className="size-4" />
