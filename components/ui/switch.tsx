@@ -17,7 +17,14 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:bg-primary data-unchecked:bg-input dark:data-unchecked:bg-input/80 data-disabled:cursor-not-allowed data-disabled:opacity-50",
+        /* The `after:` pseudo-element is the real hit area — the track itself is
+         * only 18.4px tall, far below the 44px minimum, and growing the track
+         * would change the visual design. `-inset-y-3.5` takes the hit area to
+         * 18.4 + 28 = 46px tall and `-inset-x-3` to 32 + 24 = 56px wide, so a
+         * finger has a full-size target over a switch that still looks small.
+         * Note this is invisible to `getBoundingClientRect`, which reports only
+         * the track — measure with the pseudo-element included. */
+        "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-3.5 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:bg-primary data-unchecked:bg-input dark:data-unchecked:bg-input/80 data-disabled:cursor-not-allowed data-disabled:opacity-50",
         className
       )}
       {...props}

@@ -262,6 +262,16 @@ export function MobilePreview({ initial }: { initial: PreviewParams }) {
                     ? formatReport(report)
                     : "waiting for frame…"}
             </pre>
+            {/* The 44px threshold is a touch standard. At a desktop width the
+              * tap-target check will light up for controls that are correct for
+              * a mouse, so say so rather than let the count read as a defect. */}
+            {w >= 1024 ? (
+              <p className="mt-2 max-w-[70ch] text-[11px] leading-relaxed text-amber-800">
+                Desktop width — tap-target findings do not apply here. 44px is a
+                touch minimum; pointer-driven controls are legitimately smaller.
+                Judge those findings at a phone or tablet width.
+              </p>
+            ) : null}
             <p className="mt-2 max-w-[70ch] text-[11px] leading-relaxed text-neutral-600">
               Reflects the frame&apos;s DOM as it stands right now. Content
               behind an interaction — the nav sheet, an accordion, a quiz step —

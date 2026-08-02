@@ -18,7 +18,13 @@ export function Panel({
 }) {
   return (
     <section className="bg-cream">
-      <main className="container mx-auto py-4 md:p-6 lg:p-12">
+      {/* No top padding below sm. That padding exists to let the cream show as a
+        * frame around the rounded panel — but below sm the panel is
+        * `rounded-none` and full-bleed, so there is nothing to frame. All it did
+        * there was put a 16px cream strip between the cream nav and the panel.
+        * Being the same cream, it merged into the header and read as the header
+        * having a stray 16px of bottom padding. */}
+      <main className="container mx-auto pb-4 sm:pt-4 md:p-6 lg:p-12">
         <div className="rounded-none bg-bone p-4 md:p-6 lg:p-12 sm:rounded-[2rem]">
           {title ? <h1 className="mb-3">{title}</h1> : null}
           {children}

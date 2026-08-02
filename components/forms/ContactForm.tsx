@@ -79,10 +79,12 @@ function SegmentedRadio({
     <div role="group" className="inline-flex flex-wrap">
       {options.map((opt, i) => {
         const checked = value === opt.value;
+        // The <input> is sr-only, so the <label> IS the tap target — min-h-11
+        // puts it at the 44px minimum (it was 42px).
         return (
           <label
             key={opt.value}
-            className={`cursor-pointer border border-brand px-4 py-2 text-center transition-colors ${
+            className={`flex min-h-11 cursor-pointer items-center justify-center border border-brand px-4 py-2 text-center transition-colors ${
               i === 0 ? "rounded-l-md" : "-ml-px"
             } ${i === options.length - 1 ? "rounded-r-md" : ""} ${
               checked

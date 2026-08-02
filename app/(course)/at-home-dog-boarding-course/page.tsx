@@ -15,6 +15,7 @@ import {
 import { CourseOutline } from "@/components/course/CourseOutline";
 import { CourseVideo } from "@/components/course/CourseVideo";
 import { EnrollButton } from "@/components/course/EnrollButton";
+import { StickyEnrollBar } from "@/components/course/StickyEnrollBar";
 import { ReadMore } from "@/components/course/ReadMore";
 import { LoopingVideo } from "@/components/media/LoopingVideo";
 import { SectionTracker } from "@/components/analytics/SectionTracker";
@@ -401,9 +402,14 @@ export default async function CourseePage(props: {
               &copy; {new Date().getFullYear()} HoundAwayFromHome.com. All rights
               reserved.
             </p>
+            {/* Clears the fixed mobile enroll bar so it never covers the
+              * copyright line. Zero above lg, where the bar is not rendered. */}
+            <div aria-hidden className="h-16 lg:hidden" />
           </div>
         </section>
       </SectionTracker>
+
+      <StickyEnrollBar href={href} />
     </>
   );
 }

@@ -36,7 +36,11 @@ export function CourseNav() {
   return (
     <nav aria-label="Course navigation" className="bg-white shadow-sm">
       <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
-        <Link href="/at-home-dog-boarding-course">
+        {/* min-h-11: the logo is a 40px-tall image, just under the touch minimum. */}
+        <Link
+          href="/at-home-dog-boarding-course"
+          className="flex min-h-11 items-center"
+        >
           <Image
             src="/images/course/headerlogo.png"
             alt="Hound Away From Home online course"

@@ -174,7 +174,7 @@ function checkHorizontalOverflow(win: Window, clientWidth: number): Finding[] {
  * 1×1 would be crying wolf, and an audit that cries wolf gets ignored.
  */
 function effectiveTarget(win: Window, el: Element): DOMRect {
-  const own = el.getBoundingClientRect();
+  const own = pseudoExpandedRect(win, el);
   const tag = el.tagName;
   if (tag !== "INPUT" && tag !== "SELECT" && tag !== "TEXTAREA") return own;
 
@@ -191,10 +191,81 @@ function effectiveTarget(win: Window, el: Element): DOMRect {
   return lr.width * lr.height > own.width * own.height ? lr : own;
 }
 
+/**
+ * Grow the rect by any absolutely-positioned `::before`/`::after` with negative
+ * insets — the standard trick for giving a deliberately small control a
+ * full-size hit area. shadcn's Switch uses it: the track is 18px tall but
+ * `after:-inset-y-3.5` makes the tappable region 46px.
+ *
+ * `getBoundingClientRect` sees none of that, so without this the audit reports
+ * every such control as a critical failure when it is in fact already correct.
+ */
+function pseudoExpandedRect(win: Window, el: Element): DOMRect {
+  const base = el.getBoundingClientRect();
+  let top = base.top;
+  let right = base.right;
+  let bottom = base.bottom;
+  let left = base.left;
+
+  for (const pseudo of ["::before", "::after"] as const) {
+    const s = win.getComputedStyle(el, pseudo);
+    if (s.content === "none" || s.position !== "absolute") continue;
+    // A negative inset extends the box outward; parseFloat("auto") is NaN.
+    const inset = (v: string) => {
+      const n = Number.parseFloat(v);
+      return Number.isFinite(n) && n < 0 ? -n : 0;
+    };
+    top -= inset(s.top);
+    right += inset(s.right);
+    bottom += inset(s.bottom);
+    left -= inset(s.left);
+  }
+
+  if (top === base.top && right === base.right && bottom === base.bottom && left === base.left) {
+    return base;
+  }
+  /* The parent realm's DOMRect is fine here — unlike the elements themselves,
+   * this is a value object we construct and only ever read numbers off. */
+  return new DOMRect(left, top, right - left, bottom - top);
+}
+
+/**
+ * WCAG 2.2 SC 2.5.8 exempts a target that sits "in a sentence or [whose] size is
+ * otherwise constrained by the line-height of non-target text". Padding a link
+ * that lives mid-paragraph out to 44px would wreck the line spacing around it,
+ * which is exactly why the exception exists.
+ *
+ * The test is two-part: the element is inline-level, AND its parent holds real
+ * prose of its own — counted as direct child TEXT NODES, not `textContent`.
+ * That distinction is what makes it safe. `textContent` includes every sibling
+ * element's text, so a row of buttons would look like a sentence and the whole
+ * toolbar would be waved through. Only a bare text node next to the target
+ * proves it is embedded in running text.
+ *
+ * Exempt: "read our <a>free ebook</a> today", the testimonial "More…" toggle.
+ * Not exempt: a lone <a> in an <li> (a nav link), an "Expand All" button whose
+ * flex parent contains nothing but other buttons.
+ */
+function isInlineTextTarget(win: Window, el: Element): boolean {
+  /* inline-block and inline-flex count — a <button> mid-sentence is
+   * inline-block by default and is exactly the case the exception covers. */
+  if (!win.getComputedStyle(el).display.startsWith("inline")) return false;
+  const parent = el.parentElement;
+  if (!parent) return false;
+  for (const node of Array.from(parent.childNodes)) {
+    // 3 === Node.TEXT_NODE, spelled out because Node is a per-realm global.
+    if (node.nodeType === 3 && (node.nodeValue ?? "").trim().length > 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function checkTapTargets(win: Window): Finding[] {
   const findings: Finding[] = [];
   for (const el of Array.from(win.document.querySelectorAll(INTERACTIVE))) {
     if (!isVisible(win, el)) continue;
+    if (isInlineTextTarget(win, el)) continue;
     const r = effectiveTarget(win, el);
     if (r.width >= TAP_TARGET_MIN && r.height >= TAP_TARGET_MIN) continue;
 

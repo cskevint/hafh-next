@@ -86,12 +86,18 @@ export const FOOTER_LINKS = [
   { href: "/aboutus", label: "About Us" },
 ] as const;
 
+/**
+ * Facebook was removed from SOCIALS and REVIEW_PLATFORMS because the page is
+ * down — every link pointed at a dead destination. The assets to restore it are
+ * deliberately kept: `public/images/logo-facebook.png` and `FacebookIcon` in
+ * components/icons/brand.tsx. Putting it back means re-adding an entry to each
+ * array below and the `facebook` key to SOCIAL_ICONS.
+ *
+ * NOTE this is only about the Facebook *page*. The Meta Pixel in
+ * components/analytics/Analytics.tsx is ad attribution on a different property
+ * and is untouched — removing it would silently orphan the ad audiences.
+ */
 export const SOCIALS = [
-  {
-    key: "facebook",
-    label: "Facebook",
-    href: "https://www.facebook.com/houndawayfromhome/",
-  },
   {
     key: "instagram",
     label: "Instagram",
@@ -114,11 +120,6 @@ export type SocialKey = (typeof SOCIALS)[number]["key"];
 /** Review-platform badges on the homepage. Rover appears here but not in the
  * nav, since there is no Rover icon in the nav row. */
 export const REVIEW_PLATFORMS = [
-  {
-    label: "Facebook",
-    href: "https://www.facebook.com/houndawayfromhome/",
-    logo: "/images/logo-facebook.png",
-  },
   {
     label: "Instagram",
     href: "https://www.instagram.com/houndawayfromhomeinc/",

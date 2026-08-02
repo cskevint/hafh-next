@@ -39,9 +39,13 @@ export default function DownloadFreeEbookPage() {
             />
           </div>
           <p className="my-3 mb-0">
+            {/* The only content of its paragraph, so it is a standalone target
+              * and gets the full 44px. `underline` is now unconditional rather
+              * than hover-only: there is no hover on a phone, so this was
+              * reading as plain text to most of the people who see it. */}
             <Link
               href="/at-home-dog-boarding-course"
-              className="text-brown underline-offset-4 hover:underline"
+              className="-mx-1 inline-block px-1 py-2.5 text-brown underline underline-offset-4 hover:text-brand"
             >
               Learn about our online course!
             </Link>

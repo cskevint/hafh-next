@@ -52,7 +52,10 @@ export function CourseOutline({ days }: { days: readonly Day[] }) {
           variant="outline"
           onClick={toggleAll}
           aria-expanded={allOpen}
-          className="h-auto rounded-full px-6 py-2"
+          /* `h-auto` overrides the size variant's height, so this control opted
+           * out of the 44px mobile minimum the Button sizes provide. `min-h-11`
+           * puts it back below md without changing the desktop pill. */
+          className="h-auto min-h-11 rounded-full px-6 py-2 md:min-h-0"
         >
           {allOpen ? "Collapse All" : "Expand All"}
         </Button>

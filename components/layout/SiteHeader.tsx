@@ -41,7 +41,13 @@ export function SiteHeader() {
   return (
     <nav aria-label="Page navigation" className="bg-cream">
       <div className="container mx-auto flex items-center justify-between gap-4 px-3 py-2">
-        <Link href="/" className="shrink-0" aria-label={`${SITE.name} home`}>
+        {/* min-h-11 so the wordmark, which is a 32px-tall image, still presents a
+          * 44px tap target — this is the "go home" affordance on every page. */}
+        <Link
+          href="/"
+          className="flex min-h-11 shrink-0 items-center"
+          aria-label={`${SITE.name} home`}
+        >
           {/* The PHP swapped between logo-horizontal and logo-horizontal-thin at
            * the `sm` breakpoint by rendering both and hiding one. */}
           <Image
@@ -135,7 +141,11 @@ export function SiteHeader() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={label}
-                      className="rounded p-2 text-espresso hover:text-brand"
+                      /* p-3, not p-2: these are inside the mobile drawer, so
+                       * they are finger targets. 20px icon + 24px padding = 44.
+                       * The desktop row above keeps p-2 — it is `lg:flex` only
+                       * and is driven by a cursor. */
+                      className="rounded p-3 text-espresso hover:text-brand"
                     >
                       <Icon className="size-5" />
                     </a>
