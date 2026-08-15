@@ -1,5 +1,5 @@
 /**
- * The 11 site FAQs, previously faqs.md rendered through Parsedown Extra.
+ * The site FAQs, previously faqs.md rendered through Parsedown Extra.
  *
  * Moved to typed data rather than kept as markdown, because faqs.md used two
  * Parsedown-SPECIFIC features that react-markdown + remark-gfm silently mangle:
@@ -52,6 +52,15 @@ export const FAQS: readonly Faq[] = [
       {
         kind: "p",
         text: "Flea/tick prevention and heartworm prevention is also a requirement. Flu vaccines may not be required in all instances.",
+      },
+    ],
+  },
+  {
+    question: "What happens if my dog gets sick while staying with you?",
+    blocks: [
+      {
+        kind: "p",
+        text: "Even with proper vaccination, illnesses such as canine cough or other upper respiratory infections may still occur. If a dog becomes ill while in our care, they will be isolated until they can be picked up.",
       },
     ],
   },
